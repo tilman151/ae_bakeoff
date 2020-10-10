@@ -3,6 +3,8 @@ from math import pow
 
 import torch.nn as nn
 
+from utils import pairwise
+
 
 class DenseEncoder(nn.Module):
     def __init__(self, input_shape, num_layers, latent_dim):
@@ -22,16 +24,14 @@ class DenseEncoder(nn.Module):
 
         in_units = reduce(lambda a, b: a*b, self.input_shape)
         shrinkage = int(pow(in_units // self.latent_dim, 1 / self.num_layers))
-        out_units = in_units // shrinkage
+        units = [in_units // (shrinkage ** i) for i in range(self.num_layers)]
 
-        for i in range(self.num_layers - 1):
+        for in_units, out_units in pairwise(units):
             layers += [nn.Linear(in_units, out_units, bias=False),
                        nn.BatchNorm1d(out_units),
                        nn.ReLU(True)]
-            in_units = out_units
-            out_units = out_units // shrinkage
 
-        layers += [nn.Linear(in_units, self.latent_dim)]
+        layers += [nn.Linear(units[-1], self.latent_dim)]
 
         return nn.Sequential(*layers)
 
