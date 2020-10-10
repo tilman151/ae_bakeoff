@@ -15,7 +15,8 @@ class MNISTDataModule(pl.LightningDataModule):
         self.data_dir = data_dir
         self.transform = transforms.Compose([
             transforms.Pad(2),
-            transforms.ToTensor()
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5])
         ])
 
         self.dims = (1, 32, 32)
