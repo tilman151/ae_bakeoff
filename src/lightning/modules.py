@@ -26,12 +26,7 @@ class Autoencoder(pl.LightningModule):
 
     def training_step(self, inputs, batch_idx):
         inputs, _ = inputs
-        encoded = self.encoder(inputs)
-        latent_code, bottleneck_loss = self.bottleneck(encoded)
-        decoded = self.decoder(latent_code)
-
-        recon_loss = self.criterion_recon(inputs, decoded).mean(0).sum()  # batch mean of L2 norm
-        loss = recon_loss + bottleneck_loss
+        loss, bottleneck_loss, recon_loss = self._get_losses(inputs)
 
         self.log('train/recon', recon_loss)
         self.log('train/bottleneck', bottleneck_loss)
@@ -40,22 +35,33 @@ class Autoencoder(pl.LightningModule):
         return loss
 
     def validation_step(self, inputs, batch_idx):
+        self._evaluate(inputs, batch_idx, mode='val')
+
+    def test_step(self, inputs, batch_idx):
+        self._evaluate(inputs, batch_idx, mode='test')
+
+    def _evaluate(self, inputs, batch_idx, mode):
         inputs, _, = inputs
         if batch_idx == 0:
-            outputs = self(inputs)
-            comparison = torch.cat([inputs, outputs], dim=2)
-            self.logger.experiment.add_images('val/reconstructions', comparison, self.global_step)
+            self._log_generate_images(inputs, mode)
 
+        loss, bottleneck_loss, recon_loss = self._get_losses(inputs)
+
+        self.log(f'{mode}/recon', recon_loss)
+        self.log(f'{mode}/bottleneck', bottleneck_loss)
+        self.log(f'{mode}/loss', loss)
+
+    def _log_generate_images(self, inputs, mode):
+        outputs = self(inputs)
+        comparison = torch.cat([inputs, outputs], dim=2)
+        self.logger.experiment.add_images(f'{mode}/reconstructions', comparison, self.global_step)
+
+    def _get_losses(self, inputs):
         encoded = self.encoder(inputs)
         latent_code, bottleneck_loss = self.bottleneck(encoded)
         decoded = self.decoder(latent_code)
 
-        recon_loss = self.criterion_recon(inputs, decoded)
+        recon_loss = self.criterion_recon(inputs, decoded).mean(0).sum()  # batch mean of L2 norm
         loss = recon_loss + bottleneck_loss
 
-        self.log('val/recon', recon_loss)
-        self.log('val/bottleneck', bottleneck_loss)
-        self.log('val/loss', loss)
-
-    # def test_step(self, inputs):
-    #     pass
+        return loss, bottleneck_loss, recon_loss
