@@ -12,7 +12,7 @@ class Autoencoder(pl.LightningModule):
         self.decoder = decoder
 
         self.lr = lr
-        self.criterion_recon = nn.MSELoss(reduction='none')
+        self.criterion_recon = nn.BCELoss(reduction='none')
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
@@ -61,7 +61,7 @@ class Autoencoder(pl.LightningModule):
         latent_code, bottleneck_loss = self.bottleneck(encoded)
         decoded = self.decoder(latent_code)
 
-        recon_loss = self.criterion_recon(inputs, decoded).mean(0).sum()  # batch mean of L2 norm
+        recon_loss = self.criterion_recon(decoded, inputs).mean(0).sum()  # batch mean of L2 norm
         loss = recon_loss + bottleneck_loss
 
         return loss, bottleneck_loss, recon_loss

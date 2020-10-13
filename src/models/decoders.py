@@ -30,7 +30,7 @@ class DenseDecoder(nn.Module):
                        nn.ReLU(True)]
 
         layers += [nn.Linear(units[-2], units[-1]),
-                   nn.Tanh()]
+                   nn.Sigmoid()]
 
         return nn.Sequential(*layers)
 
