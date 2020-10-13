@@ -21,7 +21,7 @@ class IdentityBottleneck(Bottleneck):
 
 
 class VariationalBottleneck(nn.Module):
-    def __init__(self, beta):
+    def __init__(self, beta=1.):
         super().__init__()
 
         self.beta = beta
