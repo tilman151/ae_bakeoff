@@ -11,3 +11,10 @@ class TestDenseEncoder(ModelTestsMixin, unittest.TestCase):
         self.test_inputs = torch.randn(16, 1, 32, 32)
         self.output_shape = torch.Size((16, 32))
         self.net = encoders.DenseEncoder(self.test_inputs.shape[1:], 3, 32)
+
+
+class TestShallowEncoder(ModelTestsMixin, unittest.TestCase):
+    def setUp(self):
+        self.test_inputs = torch.randn(16, 1, 32, 32)
+        self.output_shape = torch.Size((16, 32))
+        self.net = encoders.ShallowEncoder(self.test_inputs.shape[1:], 32)

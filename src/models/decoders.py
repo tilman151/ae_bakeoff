@@ -39,3 +39,21 @@ class DenseDecoder(nn.Module):
         outputs = outputs.view(-1, *self.output_shape)
 
         return outputs
+
+
+class ShallowDecoder(nn.Module):
+    def __init__(self, latent_dim, output_shape):
+        super().__init__()
+
+        self.output_shape = output_shape
+        self.latent_dim = latent_dim
+
+        out_units = reduce(lambda a, b: a * b, self.output_shape)
+        self.layer = nn.Sequential(nn.Linear(self.latent_dim, out_units),
+                                   nn.Sigmoid())
+
+    def forward(self, inputs):
+        outputs = self.layer(inputs)
+        outputs = outputs.view(-1, *self.output_shape)
+
+        return outputs

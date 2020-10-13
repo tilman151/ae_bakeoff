@@ -37,3 +37,19 @@ class DenseEncoder(nn.Module):
 
     def forward(self, inputs):
         return self.layers(inputs)
+
+
+class ShallowEncoder(nn.Module):
+    def __init__(self, input_shape, latent_dim):
+        super().__init__()
+
+        self.input_shape = input_shape
+        self.latent_dim = latent_dim
+
+        in_units = reduce(lambda a, b: a * b, self.input_shape)
+        self.layer = nn.Sequential(nn.Flatten(),
+                                   nn.Linear(in_units, self.latent_dim),
+                                   nn.ReLU())
+
+    def forward(self, inputs):
+        return self.layer(inputs)
