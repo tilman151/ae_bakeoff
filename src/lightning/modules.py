@@ -39,8 +39,23 @@ class Autoencoder(pl.LightningModule):
 
         return loss
 
-    # def validation_step(self, inputs):
-    #     pass
-    #
+    def validation_step(self, inputs, batch_idx):
+        inputs, _, = inputs
+        if batch_idx == 0:
+            outputs = self(inputs)
+            comparison = torch.cat([inputs, outputs], dim=2)
+            self.logger.experiment.add_images('val/reconstructions', comparison, self.global_step)
+
+        encoded = self.encoder(inputs)
+        latent_code, bottleneck_loss = self.bottleneck(encoded)
+        decoded = self.decoder(latent_code)
+
+        recon_loss = self.criterion_recon(inputs, decoded)
+        loss = recon_loss + bottleneck_loss
+
+        self.log('val/recon', recon_loss)
+        self.log('val/bottleneck', bottleneck_loss)
+        self.log('val/loss', loss)
+
     # def test_step(self, inputs):
     #     pass
