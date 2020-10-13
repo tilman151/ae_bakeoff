@@ -29,7 +29,8 @@ class DenseDecoder(nn.Module):
                        nn.BatchNorm1d(out_units),
                        nn.ReLU(True)]
 
-        layers += [nn.Linear(units[-2], units[-1])]
+        layers += [nn.Linear(units[-2], units[-1]),
+                   nn.Tanh()]
 
         return nn.Sequential(*layers)
 
