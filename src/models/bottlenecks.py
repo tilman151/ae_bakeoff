@@ -21,6 +21,11 @@ class IdentityBottleneck(Bottleneck):
 
 
 class VariationalBottleneck(nn.Module):
+    def __init__(self, beta):
+        super().__init__()
+
+        self.beta = beta
+
     def forward(self, encoded):
         latent_dim = encoded.shape[1] // 2
         mu, log_sigma = torch.split(encoded, latent_dim, dim=1)
@@ -31,4 +36,8 @@ class VariationalBottleneck(nn.Module):
         return latent_code, loss
 
     def _loss(self, mu, log_sigma):
-        return 0.5 * torch.sum((2 * log_sigma).exp() + mu ** 2 - 1 - 2 * log_sigma)
+        kl_div = 0.5 * torch.sum((2 * log_sigma).exp() + mu ** 2 - 1 - 2 * log_sigma, dim=1)
+        kl_div = kl_div.mean()  # Account for batch size
+        kl_div *= self.beta  # trade off
+
+        return kl_div
