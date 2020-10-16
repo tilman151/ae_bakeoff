@@ -10,15 +10,14 @@ from torchvision import transforms
 
 class MNISTDataModule(pl.LightningDataModule):
 
-    def __init__(self, data_dir: str = './'):
+    def __init__(self, data_dir: str = './', apply_noise=False):
         super().__init__()
         self.data_dir = data_dir
-        self.transform = transforms.Compose([
-            transforms.Pad(2),
-            transforms.ToTensor()
-        ])
+        self.transform = [transforms.Pad(2),
+                          transforms.ToTensor()]
 
         self.dims = (1, 32, 32)
+        self.apply_noise = apply_noise
 
         self.mnist_train = None
         self.mnist_val = None
@@ -30,12 +29,14 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            mnist_full = MNIST(self.data_dir, train=True, transform=self.transform)
+            train_transform = transforms.Compose(self.transform + [AddNoise(noise_ratio=0.1)])
+            mnist_full = MNIST(self.data_dir, train=True, transform=train_transform)
             self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000],
                                                             generator=torch.Generator().manual_seed(42))
 
         if stage == 'test' or stage is None:
-            self.mnist_test = MNIST(self.data_dir, train=False, transform=self.transform)
+            test_transform = transforms.Compose(self.transform)
+            self.mnist_test = MNIST(self.data_dir, train=False, transform=test_transform)
 
     def train_dataloader(self):
         return DataLoader(self.mnist_train, batch_size=32, num_workers=2)
@@ -45,3 +46,14 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.mnist_test, batch_size=32, num_workers=2)
+
+
+class AddNoise:
+    def __init__(self, noise_ratio):
+        self.noise_ratio = noise_ratio
+
+    def __call__(self, img):
+        img = img + torch.randn_like(img) * self.noise_ratio
+        img = torch.clamp(img, min=0., max=1.)
+
+        return img
