@@ -16,7 +16,7 @@ class TestIdentityBottleneck(unittest.TestCase):
         outputs, loss = self.neck(inputs)
 
         self.assertIs(inputs, outputs)
-        self.assertEqual(0., 0)
+        self.assertEqual(0., loss)
 
 
 class TestVariationalBottleneck(unittest.TestCase):
@@ -29,7 +29,6 @@ class TestVariationalBottleneck(unittest.TestCase):
         outputs, loss = self.neck(inputs)
 
         self.assertEqual(torch.Size((16, 1)), outputs.shape)
-        self.assertEqual(0., 0)
 
     @torch.no_grad()
     def test_kl_divergence(self):
@@ -51,3 +50,34 @@ class TestVariationalBottleneck(unittest.TestCase):
         _, actual_kl_div = self.neck(inputs)
 
         self.assertAlmostEqual(expected_kl_div, actual_kl_div.numpy(), delta=0.05)
+
+
+class TestSparseBottleneck(unittest.TestCase):
+    def setUp(self):
+        self.neck = bottlenecks.SparseBottleneck(0.5)
+
+    @torch.no_grad()
+    def test_forward(self):
+        inputs = torch.zeros(16, 2)
+        outputs, loss = self.neck(inputs)
+
+        self.assertEqual(torch.Size((16, 1)), outputs.shape)
+
+    @torch.no_grad()
+    def test_kl_divergence(self):
+        standard_samples = np.random.binomial(1, p=0.5, size=(1000000, 10))
+        transformed_sample = np.random.binomial(1, p=0.2, size=(1000000, 10))
+
+        # Calculate empirical pdfs for both distributions
+        bins = 2
+        bin_range = [0, 1]
+        expected_kl_div = 0
+        for i in range(10):
+            standard_dist, _ = np.histogram(standard_samples[:, i], bins, bin_range)
+            transformed_dist, _ = np.histogram(transformed_sample[:, i], bins, bin_range)
+            expected_kl_div += scipy.stats.entropy(standard_dist, transformed_dist)
+
+        inputs = (torch.tensor(transformed_sample, dtype=torch.float) - 0.5) * 1000
+        _, actual_kl_div = self.neck(inputs)
+
+        self.assertAlmostEqual(expected_kl_div, actual_kl_div.numpy(), delta=0.01)
