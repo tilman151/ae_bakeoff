@@ -36,7 +36,7 @@ class ModelTestsMixin:
         self.net.train()
 
         # Mask loss for certain samples in batch
-        batch_size = inputs[0].shape[0]
+        batch_size = inputs.shape[0]
         mask_idx = torch.randint(0, batch_size, ())
         mask = torch.ones_like(outputs)
         mask[mask_idx] = 0

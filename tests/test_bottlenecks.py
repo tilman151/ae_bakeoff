@@ -45,6 +45,7 @@ class TestVariationalBottleneck(unittest.TestCase):
             standard_normal_dist, _ = np.histogram(standard_normal_samples[:, i], bins, bin_range)
             transformed_normal_dist, _ = np.histogram(transformed_normal_sample[:, i], bins, bin_range)
             expected_kl_div += scipy.stats.entropy(transformed_normal_dist, standard_normal_dist)
+        expected_kl_div /= 10  # Account for batch_size
 
         inputs = torch.stack([torch.tensor(mu), torch.tensor(sigma).log()], dim=1)
         _, actual_kl_div = self.neck(inputs)
@@ -61,7 +62,7 @@ class TestSparseBottleneck(unittest.TestCase):
         inputs = torch.zeros(16, 2)
         outputs, loss = self.neck(inputs)
 
-        self.assertEqual(torch.Size((16, 1)), outputs.shape)
+        self.assertEqual(torch.Size((16, 2)), outputs.shape)
 
     @torch.no_grad()
     def test_kl_divergence(self):
