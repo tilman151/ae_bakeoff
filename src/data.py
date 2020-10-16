@@ -28,15 +28,22 @@ class MNISTDataModule(pl.LightningDataModule):
         MNIST(self.data_dir, train=False, download=True)
 
     def setup(self, stage=None):
+        transform = self._get_transforms(stage)
         if stage == 'fit' or stage is None:
-            train_transform = transforms.Compose(self.transform + [AddNoise(noise_ratio=0.1)])
-            mnist_full = MNIST(self.data_dir, train=True, transform=train_transform)
+            mnist_full = MNIST(self.data_dir, train=True, transform=transform)
             self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000],
                                                             generator=torch.Generator().manual_seed(42))
 
         if stage == 'test' or stage is None:
-            test_transform = transforms.Compose(self.transform)
-            self.mnist_test = MNIST(self.data_dir, train=False, transform=test_transform)
+            self.mnist_test = MNIST(self.data_dir, train=False, transform=transform)
+
+    def _get_transforms(self, stage):
+        if self.apply_noise and stage == 'fit':
+            transform = self.transform + [AddNoise(noise_ratio=0.1)]
+        else:
+            transform = self.transform
+
+        return transforms.Compose(transform)
 
     def train_dataloader(self):
         return DataLoader(self.mnist_train, batch_size=32, num_workers=2)
