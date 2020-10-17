@@ -1,3 +1,4 @@
+import warnings
 from functools import reduce
 from math import pow
 
@@ -85,7 +86,7 @@ class StackedDecoder(DenseDecoder):
             self._current_layer -= 1
             self._freeze_layers()
         else:
-            raise RuntimeError('Decoder is already fully stacked.')
+            warnings.warn('Decoder is already fully stacked.')
 
     def _freeze_layers(self):
         cut_off = self._current_layer

@@ -32,20 +32,14 @@ class TestStackedDecoder(unittest.TestCase):
                 inputs = torch.randn(16, num_features)
                 outputs = self.net(inputs)
                 self.assertEqual(self.output_shape, outputs.shape)
-            if self.net.current_layer > 0:
-                self.net.stack_layer()
-            else:
-                self.assertRaises(RuntimeError, self.net.stack_layer)
+            self.net.stack_layer()
 
     def test_freezing(self):
         for i in range(3, 0, -1):
             with self.subTest(stack_level=i):
                 self._check_frozen(self.net.layers[i:])
                 self._check_frozen(self.net.layers[:i], should_be_frozen=False)
-            if self.net.current_layer > 0:
-                self.net.stack_layer()
-            else:
-                self.assertRaises(RuntimeError, self.net.stack_layer)
+            self.net.stack_layer()
 
     def test_set_training(self):
         self.net.stack_layer()

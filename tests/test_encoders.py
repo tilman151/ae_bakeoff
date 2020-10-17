@@ -31,20 +31,14 @@ class TestStackedEncoder(unittest.TestCase):
             with self.subTest(stack_level=i):
                 outputs = self.net(self.test_inputs)
                 self.assertEqual(torch.Size((16, num_features)), outputs.shape)
-            if self.net.current_layer < self.net.num_layers:
-                self.net.stack_layer()
-            else:
-                self.assertRaises(RuntimeError, self.net.stack_layer)
+            self.net.stack_layer()
 
     def test_freezing(self):
         for i in range(3):
             with self.subTest(stack_level=i):
                 self._check_frozen(self.net.layers[:i])
                 self._check_frozen(self.net.layers[i:], should_be_frozen=False)
-            if self.net.current_layer < self.net.num_layers:
-                self.net.stack_layer()
-            else:
-                self.assertRaises(RuntimeError, self.net.stack_layer)
+            self.net.stack_layer()
 
     def test_set_training(self):
         self.net.stack_layer()

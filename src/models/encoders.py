@@ -1,3 +1,4 @@
+import warnings
 from functools import reduce
 from math import pow
 
@@ -80,7 +81,7 @@ class StackedEncoder(DenseEncoder):
             self._current_layer += 1
             self._freeze_layers()
         else:
-            raise RuntimeError('Encoder is already fully stacked.')
+            warnings.warn('Encoder is already fully stacked.')
 
     def _freeze_layers(self):
         cut_off = self._current_layer - 1
