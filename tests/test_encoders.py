@@ -18,3 +18,19 @@ class TestShallowEncoder(ModelTestsMixin, unittest.TestCase):
         self.test_inputs = torch.randn(16, 1, 32, 32)
         self.output_shape = torch.Size((16, 32))
         self.net = encoders.ShallowEncoder(self.test_inputs.shape[1:], 32)
+
+
+class TestStackedEncoder(unittest.TestCase):
+    def setUp(self):
+        self.test_inputs = torch.randn(16, 1, 32, 32)
+        self.net = encoders.StackedEncoder(self.test_inputs.shape[1:], 3, 32)
+
+    def test_stacking(self):
+        for i, num_features in enumerate([341, 113, 32]):
+            with self.subTest(stack_level=i):
+                outputs = self.net(self.test_inputs)
+                self.assertEqual(torch.Size((16, num_features)), outputs.shape)
+            if self.net.current_layer < self.net.num_layers:
+                self.net.stack_layer()
+            else:
+                self.assertRaises(RuntimeError, self.net.stack_layer)

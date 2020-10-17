@@ -1,6 +1,7 @@
 from functools import reduce
 from math import pow
 
+import torch
 import torch.nn as nn
 
 from utils import pairwise
@@ -17,26 +18,35 @@ class DenseEncoder(nn.Module):
         self.layers = self._build_layers()
 
     def _build_layers(self):
-        if len(self.input_shape) > 1:
-            layers = [nn.Flatten()]
-        else:
-            layers = []
-
-        in_units = reduce(lambda a, b: a*b, self.input_shape)
-        shrinkage = int(pow(in_units // self.latent_dim, 1 / self.num_layers))
-        units = [in_units // (shrinkage ** i) for i in range(self.num_layers)]
-
+        units = self._get_units()
+        layers = []
         for in_units, out_units in pairwise(units):
-            layers += [nn.Linear(in_units, out_units, bias=False),
-                       nn.BatchNorm1d(out_units),
-                       nn.ReLU(True)]
-
-        layers += [nn.Linear(units[-1], self.latent_dim)]
+            layers += [self._build_hidden_layer(in_units, out_units)]
+        layers += [self._build_final_layer(units[-1])]
 
         return nn.Sequential(*layers)
 
+    def _get_units(self):
+        in_units = reduce(lambda a, b: a * b, self.input_shape)
+        shrinkage = int(pow(in_units // self.latent_dim, 1 / self.num_layers))
+        units = [in_units // (shrinkage ** i) for i in range(self.num_layers)]
+
+        return units
+
+    @staticmethod
+    def _build_hidden_layer(in_units, out_units):
+        return nn.Sequential(nn.Linear(in_units, out_units, bias=False),
+                             nn.BatchNorm1d(out_units),
+                             nn.ReLU(True))
+
+    def _build_final_layer(self, in_units):
+        return nn.Linear(in_units, self.latent_dim)
+
     def forward(self, inputs):
-        return self.layers(inputs)
+        inputs = torch.flatten(inputs, start_dim=1)
+        outputs = self.layers(inputs)
+
+        return outputs
 
 
 class ShallowEncoder(nn.Module):
@@ -53,3 +63,27 @@ class ShallowEncoder(nn.Module):
 
     def forward(self, inputs):
         return self.layer(inputs)
+
+
+class StackedEncoder(DenseEncoder):
+    def __init__(self, input_shape, num_layers, latent_dim):
+        super().__init__(input_shape, num_layers, latent_dim)
+
+        self._current_layer = 1
+
+    @property
+    def current_layer(self):
+        return self._current_layer
+
+    def stack_layer(self):
+        if self._current_layer < self.num_layers:
+            self._current_layer += 1
+        else:
+            raise RuntimeError('Encoder is already fully stacked.')
+
+    def forward(self, inputs):
+        inputs = torch.flatten(inputs, start_dim=1)
+        for n in range(self._current_layer):
+            inputs = self.layers[n](inputs)
+
+        return inputs
