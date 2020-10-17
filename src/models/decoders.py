@@ -74,21 +74,21 @@ class StackedDecoder(DenseDecoder):
     def __init__(self, latent_dim, num_layers, output_shape):
         super().__init__(latent_dim, num_layers, output_shape)
 
-        self._current_layer = 1
+        self._current_layer = self.num_layers
 
     @property
     def current_layer(self):
         return self._current_layer
 
     def stack_layer(self):
-        if self._current_layer < self.num_layers:
-            self._current_layer += 1
+        if self._current_layer > 0:
+            self._current_layer -= 1
             self._freeze_layers()
         else:
             raise RuntimeError('Decoder is already fully stacked.')
 
     def _freeze_layers(self):
-        cut_off = self.num_layers - self._current_layer + 1
+        cut_off = self._current_layer
         for m in self.layers[cut_off:].modules():
             if isinstance(m, nn.Linear):
                 if m.weight is not None:
@@ -107,7 +107,7 @@ class StackedDecoder(DenseDecoder):
         self._freeze_layers()
 
     def forward(self, inputs):
-        for n in range(self.num_layers - self._current_layer, self.num_layers):
+        for n in range(self._current_layer - 1, self.num_layers):
             inputs = self.layers[n](inputs)
         outputs = inputs.view(-1, *self.output_shape)
 
