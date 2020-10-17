@@ -1,6 +1,7 @@
 import unittest
 
 import torch
+import torch.nn as nn
 
 from models import decoders
 from tests.templates import ModelTestsMixin
@@ -35,3 +36,37 @@ class TestStackedDecoder(unittest.TestCase):
                 self.net.stack_layer()
             else:
                 self.assertRaises(RuntimeError, self.net.stack_layer)
+
+    def test_freezing(self):
+        for i in range(3, 0, -1):
+            with self.subTest(stack_level=i):
+                self._check_frozen(self.net.layers[i:])
+                self._check_frozen(self.net.layers[:i], should_be_frozen=False)
+            if self.net.current_layer < self.net.num_layers:
+                self.net.stack_layer()
+            else:
+                self.assertRaises(RuntimeError, self.net.stack_layer)
+
+    def test_set_training(self):
+        self.net.stack_layer()
+        self.net.eval()
+        self._check_frozen(self.net.layers[2:])
+        self.net.train()
+        self._check_frozen(self.net.layers[2:])
+        self._check_frozen(self.net.layers[:2], should_be_frozen=False)
+
+    def _check_frozen(self, layers, should_be_frozen=True):
+        for m in layers.modules():
+            if isinstance(m, nn.Linear):
+                if m.weight is not None:
+                    self.assertEqual(not should_be_frozen, m.weight.requires_grad)
+                if m.bias is not None:
+                    self.assertEqual(not should_be_frozen, m.bias.requires_grad)
+            elif isinstance(m, nn.BatchNorm1d):
+                if m.weight is not None:
+                    self.assertEqual(not should_be_frozen, m.weight.requires_grad)
+                if m.bias is not None:
+                    self.assertEqual(not should_be_frozen, m.bias.requires_grad)
+                self.assertEqual(not should_be_frozen, m.training)
+
+

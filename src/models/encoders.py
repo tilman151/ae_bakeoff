@@ -78,8 +78,28 @@ class StackedEncoder(DenseEncoder):
     def stack_layer(self):
         if self._current_layer < self.num_layers:
             self._current_layer += 1
+            self._freeze_layers()
         else:
             raise RuntimeError('Encoder is already fully stacked.')
+
+    def _freeze_layers(self):
+        cut_off = self._current_layer - 1
+        for m in self.layers[:cut_off].modules():
+            if isinstance(m, nn.Linear):
+                if m.weight is not None:
+                    m.weight.requires_grad_(False)
+                if m.bias is not None:
+                    m.bias.requires_grad_(False)
+            elif isinstance(m, nn.BatchNorm1d):
+                if m.weight is not None:
+                    m.weight.requires_grad_(False)
+                if m.bias is not None:
+                    m.bias.requires_grad_(False)
+                m.eval()
+
+    def train(self, mode=True):
+        super().train(mode)
+        self._freeze_layers()
 
     def forward(self, inputs):
         inputs = torch.flatten(inputs, start_dim=1)
