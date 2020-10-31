@@ -82,3 +82,46 @@ class TestSparseBottleneck(unittest.TestCase):
         _, actual_kl_div = self.neck(inputs)
 
         self.assertAlmostEqual(expected_kl_div, actual_kl_div.numpy(), delta=0.01)
+
+
+class TestVectorQuantizedBottleneck(unittest.TestCase):
+    def setUp(self):
+        self.neck = bottlenecks.VectorQuantizedBottleneck(16)
+
+    def test_quantization(self):
+        inputs = torch.randn(32, 16)
+        actual_latent, _ = self.neck(inputs)
+        expected_latent = self._vector_quantize_slow(inputs)
+
+        self.assertEqual(inputs.shape, actual_latent.shape)
+        self.assertTrue((expected_latent == actual_latent).all().item())
+
+    def _vector_quantize_slow(self, inputs):
+        dist = (self.neck.embeddings - inputs.unsqueeze(-1)) ** 2
+        dist_idx = torch.argmin(dist, dim=-1)
+
+        latent_code = torch.empty_like(inputs)
+        for batch in range(latent_code.shape[0]):
+            for dim in range(latent_code.shape[1]):
+                latent_code[batch, dim] = self.neck.embeddings[0, dim, dist_idx[batch, dim]]
+
+        return latent_code
+
+    def test_loss(self):
+        inputs = torch.randn(32, 16)
+        latent, actual_loss = self.neck(inputs)
+        expected_loss = torch.nn.functional.mse_loss(inputs, latent, reduction='sum')
+        expected_loss += self.neck.beta * torch.nn.functional.mse_loss(latent, inputs, reduction='sum')
+
+        self.assertEqual(expected_loss, actual_loss)
+
+    def test_straight_through_estimation(self):
+        inputs = torch.randn(32, 16, requires_grad=True)
+        latent, _ = self.neck(inputs)
+        loss = latent.mean()
+        loss.backward()
+
+        with self.subTest(input_grad='has_grad'):
+            self.assertFalse((inputs.grad == 0.).all())
+        with self.subTest(embedding_grad='no_grad'):
+            self.assertTrue((self.neck.embeddings.grad == 0.).all())

@@ -64,3 +64,51 @@ class SparseBottleneck(Bottleneck):
         kl_div *= self.beta  # trade off
 
         return kl_div
+
+
+class VectorQuantizedBottleneck(Bottleneck):
+    def __init__(self, latent_dim, num_categories=512, beta=1.):
+        super(VectorQuantizedBottleneck, self).__init__()
+
+        self.latent_dim = latent_dim
+        self.num_categories = num_categories
+        self.beta = beta
+
+        self.embeddings = self._build_embeddings()
+        self.quantize = Quantize().apply
+        self.sum_squared_error = nn.MSELoss(reduction='sum')
+
+    def _build_embeddings(self):
+        embeddings = nn.Parameter(torch.randn(1, self.latent_dim, self.num_categories))
+
+        return embeddings
+
+    def forward(self, encoded):
+        latent_code, selected_idx = self.quantize(encoded, self.embeddings)
+        loss = self._loss(encoded, latent_code)
+
+        return latent_code, loss
+
+    def _loss(self, encoded, latent_code):
+        vq_loss = self.sum_squared_error(latent_code, encoded.detach())
+        commitment_loss = self.sum_squared_error(encoded, latent_code.detach())
+        loss = vq_loss + self.beta * commitment_loss
+
+        return loss
+
+
+class Quantize(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, inputs, embeddings):
+        _, latent_dim, num_categories = embeddings.shape
+        dist = (embeddings - inputs.unsqueeze(-1)) ** 2
+        dist_idx = torch.argmin(dist, dim=-1)
+        offsets = torch.arange(0, latent_dim) * num_categories
+        dist_idx_flat = dist_idx + offsets.repeat(inputs.shape[0], 1)
+        latent_code = torch.take(embeddings.squeeze(0), dist_idx_flat)
+
+        return latent_code, dist_idx
+
+    @staticmethod
+    def backward(ctx, grad_output, grad_embedding):
+        return grad_output, None
