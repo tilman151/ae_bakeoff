@@ -75,20 +75,31 @@ class VectorQuantizedBottleneck(Bottleneck):
         self.beta = beta
 
         self.embeddings = self._build_embeddings()
-        self.quantize = Quantize().apply
         self.sum_squared_error = nn.MSELoss(reduction='none')
 
     def _build_embeddings(self):
-        embeddings = nn.Parameter(torch.empty(1, 1, self.num_categories))
+        embeddings = nn.Parameter(torch.empty(1, self.num_categories))
         embeddings.data.uniform_(-1 / self.num_categories, 1 / self.num_categories)
 
         return embeddings
 
     def forward(self, encoded):
-        latent_code, selected_idx = self.quantize(encoded, self.embeddings)
+        latent_code = self._quantize(encoded)
         loss = self._loss(encoded, latent_code)
+        latent_code = self._straight_through_estimation(encoded, latent_code)
 
         return latent_code, loss
+
+    def _quantize(self, inputs):
+        flat_inputs = inputs.view(-1, 1)
+        dist = (self.embeddings - flat_inputs) ** 2
+        dist_idx = torch.argmin(dist, dim=-1).unsqueeze(1)
+        idx_mask = torch.zeros(flat_inputs.shape[0], self.num_categories, device=inputs.device)
+        idx_mask.scatter_(1, dist_idx, 1)
+        latent_code = torch.matmul(idx_mask, self.embeddings.T)
+        latent_code = latent_code.view(inputs.shape)
+
+        return latent_code
 
     def _loss(self, encoded, latent_code):
         vq_loss = self.sum_squared_error(latent_code, encoded.detach())
@@ -98,19 +109,46 @@ class VectorQuantizedBottleneck(Bottleneck):
 
         return loss
 
+    def _straight_through_estimation(self, encoded, latent_code):
+        latent_code = encoded + (latent_code - encoded).detach()
 
-class Quantize(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, inputs, embeddings):
-        _, latent_dim, num_categories = embeddings.shape
-        dist = (embeddings - inputs.unsqueeze(-1)) ** 2
-        dist_idx = torch.argmin(dist, dim=-1)
-        offsets = torch.arange(0, latent_dim) * num_categories
-        dist_idx_flat = dist_idx + offsets.repeat(inputs.shape[0], 1)
-        latent_code = torch.take(embeddings.squeeze(0), dist_idx_flat)
+        return latent_code
+
 
         return latent_code, dist_idx
 
-    @staticmethod
-    def backward(ctx, grad_output, grad_embedding):
-        return grad_output, None
+        self._embedding_dim = embedding_dim
+        self._num_embeddings = num_embeddings
+
+        self._embedding = nn.Embedding(self._num_embeddings, self._embedding_dim)
+        self._embedding.weight.data.uniform_(-1 / self._num_embeddings, 1 / self._num_embeddings)
+        self._commitment_cost = commitment_cost
+
+    def forward(self, inputs):
+        input_shape = inputs.shape
+
+        # Flatten input
+        flat_input = inputs.view(-1, self._embedding_dim)
+
+        # Calculate distances
+        distances = (torch.sum(flat_input ** 2, dim=1, keepdim=True)
+                     + torch.sum(self._embedding.weight ** 2, dim=1)
+                     - 2 * torch.matmul(flat_input, self._embedding.weight.t()))
+
+        # Encoding
+        encoding_indices = torch.argmin(distances, dim=1).unsqueeze(1)
+        encodings = torch.zeros(encoding_indices.shape[0], self._num_embeddings, device=inputs.device)
+        encodings.scatter_(1, encoding_indices, 1)
+
+        # Quantize and unflatten
+        quantized = torch.matmul(encodings, self._embedding.weight).view(input_shape)
+
+        # Loss
+        e_latent_loss = nn.functional.mse_loss(quantized.detach(), inputs, reduction='sum')
+        q_latent_loss = nn.functional.mse_loss(quantized, inputs.detach(), reduction='sum')
+        loss = q_latent_loss + self._commitment_cost * e_latent_loss
+        loss /= input_shape[0]
+
+        quantized = inputs + (quantized - inputs).detach()
+
+        return quantized, loss
