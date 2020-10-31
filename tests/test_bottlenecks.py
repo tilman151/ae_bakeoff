@@ -103,7 +103,7 @@ class TestVectorQuantizedBottleneck(unittest.TestCase):
         latent_code = torch.empty_like(inputs)
         for batch in range(latent_code.shape[0]):
             for dim in range(latent_code.shape[1]):
-                latent_code[batch, dim] = self.neck.embeddings[0, dist_idx[batch, dim]]
+                latent_code[batch, dim] = self.neck.embeddings[0, dim, dist_idx[batch, dim]]
 
         return latent_code
 

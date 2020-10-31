@@ -79,7 +79,7 @@ class VectorQuantizedBottleneck(Bottleneck):
         self._straight_through_estimation = StraightThroughEstimator.apply
 
     def _build_embeddings(self):
-        embeddings = nn.Parameter(torch.empty(1, self.num_categories))
+        embeddings = nn.Parameter(torch.empty(1, self.latent_dim, self.num_categories))
         embeddings.data.uniform_(-1 / self.num_categories, 1 / self.num_categories)
 
         return embeddings
@@ -92,13 +92,11 @@ class VectorQuantizedBottleneck(Bottleneck):
         return latent_code, loss
 
     def _quantize(self, inputs):
-        flat_inputs = inputs.view(-1, 1)
-        dist = (self.embeddings - flat_inputs) ** 2
-        dist_idx = torch.argmin(dist, dim=-1).unsqueeze(1)
-        idx_mask = torch.zeros(flat_inputs.shape[0], self.num_categories, device=inputs.device)
-        idx_mask.scatter_(1, dist_idx, 1)
-        latent_code = torch.matmul(idx_mask, self.embeddings.T)
-        latent_code = latent_code.view(inputs.shape)
+        dist = (self.embeddings - inputs.unsqueeze(-1)) ** 2
+        dist_idx = torch.argmin(dist, dim=-1)
+        offsets = torch.arange(0, self.latent_dim) * self.num_categories
+        dist_idx_flat = dist_idx + offsets.repeat(inputs.shape[0], 1)
+        latent_code = torch.take(self.embeddings.squeeze(0), dist_idx_flat)
 
         return latent_code
 
