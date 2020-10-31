@@ -76,6 +76,7 @@ class VectorQuantizedBottleneck(Bottleneck):
 
         self.embeddings = self._build_embeddings()
         self.sum_squared_error = nn.MSELoss(reduction='none')
+        self._straight_through_estimation = StraightThroughEstimator.apply
 
     def _build_embeddings(self):
         embeddings = nn.Parameter(torch.empty(1, self.num_categories))
@@ -109,13 +110,20 @@ class VectorQuantizedBottleneck(Bottleneck):
 
         return loss
 
-    def _straight_through_estimation(self, encoded, latent_code):
-        latent_code = encoded + (latent_code - encoded).detach()
 
-        return latent_code
+class StraightThroughEstimator(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, encoding, quantized):
+        return quantized
+
+    @staticmethod
+    def backward(ctx, grad_quantized):
+        return grad_quantized, None
 
 
-        return latent_code, dist_idx
+class VectorQuantizer(nn.Module):
+    def __init__(self, num_embeddings, embedding_dim, commitment_cost):
+        super(VectorQuantizer, self).__init__()
 
         self._embedding_dim = embedding_dim
         self._num_embeddings = num_embeddings

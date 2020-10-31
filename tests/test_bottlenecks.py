@@ -103,7 +103,7 @@ class TestVectorQuantizedBottleneck(unittest.TestCase):
         latent_code = torch.empty_like(inputs)
         for batch in range(latent_code.shape[0]):
             for dim in range(latent_code.shape[1]):
-                latent_code[batch, dim] = self.neck.embeddings[0, dim, dist_idx[batch, dim]]
+                latent_code[batch, dim] = self.neck.embeddings[0, dist_idx[batch, dim]]
 
         return latent_code
 
@@ -114,7 +114,14 @@ class TestVectorQuantizedBottleneck(unittest.TestCase):
         expected_loss += self.neck.beta * torch.nn.functional.mse_loss(latent, inputs, reduction='sum')
         expected_loss /= inputs.shape[0]
 
-        self.assertAlmostEqual(expected_loss.item(), actual_loss.item())
+        self.assertAlmostEqual(expected_loss.item(), actual_loss.item(), places=5)
+
+    def test_loss_gradient(self):
+        inputs = torch.randn(32, 16)
+        latent, loss = self.neck(inputs)
+        loss.backward()
+
+        self.assertFalse((self.neck.embeddings.grad == 0.).all())
 
     def test_straight_through_estimation(self):
         inputs = torch.randn(32, 16, requires_grad=True)
