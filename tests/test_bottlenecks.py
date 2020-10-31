@@ -112,8 +112,9 @@ class TestVectorQuantizedBottleneck(unittest.TestCase):
         latent, actual_loss = self.neck(inputs)
         expected_loss = torch.nn.functional.mse_loss(inputs, latent, reduction='sum')
         expected_loss += self.neck.beta * torch.nn.functional.mse_loss(latent, inputs, reduction='sum')
+        expected_loss /= inputs.shape[0]
 
-        self.assertEqual(expected_loss, actual_loss)
+        self.assertAlmostEqual(expected_loss.item(), actual_loss.item())
 
     def test_straight_through_estimation(self):
         inputs = torch.randn(32, 16, requires_grad=True)

@@ -76,7 +76,7 @@ class VectorQuantizedBottleneck(Bottleneck):
 
         self.embeddings = self._build_embeddings()
         self.quantize = Quantize().apply
-        self.sum_squared_error = nn.MSELoss(reduction='sum')
+        self.sum_squared_error = nn.MSELoss(reduction='none')
 
     def _build_embeddings(self):
         embeddings = nn.Parameter(torch.randn(1, self.latent_dim, self.num_categories))
@@ -93,6 +93,7 @@ class VectorQuantizedBottleneck(Bottleneck):
         vq_loss = self.sum_squared_error(latent_code, encoded.detach())
         commitment_loss = self.sum_squared_error(encoded, latent_code.detach())
         loss = vq_loss + self.beta * commitment_loss
+        loss = loss.sum(1).mean(0)
 
         return loss
 
