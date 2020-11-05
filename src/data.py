@@ -2,7 +2,7 @@
 
 import torch
 import pytorch_lightning as pl
-from torch.utils.data import random_split, DataLoader
+from torch.utils.data import random_split, DataLoader, Subset
 
 from torchvision.datasets import MNIST
 from torchvision import transforms
@@ -10,7 +10,7 @@ from torchvision import transforms
 
 class MNISTDataModule(pl.LightningDataModule):
 
-    def __init__(self, data_dir: str = './', apply_noise=False):
+    def __init__(self, data_dir: str = './', apply_noise=False, train_size=None, exclude=None):
         super().__init__()
         self.data_dir = data_dir
         self.transform = [transforms.Pad(2),
@@ -18,6 +18,8 @@ class MNISTDataModule(pl.LightningDataModule):
 
         self.dims = (1, 32, 32)
         self.apply_noise = apply_noise
+        self.train_size = train_size
+        self.exclude = exclude
 
         self.mnist_train = None
         self.mnist_val = None
@@ -31,11 +33,23 @@ class MNISTDataModule(pl.LightningDataModule):
         transform = self._get_transforms(stage)
         if stage == 'fit' or stage is None:
             mnist_full = MNIST(self.data_dir, train=True, transform=transform)
-            self.mnist_train, self.mnist_val = random_split(mnist_full, [55000, 5000],
-                                                            generator=torch.Generator().manual_seed(42))
+            self.mnist_train, self.mnist_val = self._split_train_val(mnist_full)
 
         if stage == 'test' or stage is None:
             self.mnist_test = MNIST(self.data_dir, train=False, transform=transform)
+
+    def _split_train_val(self, mnist_full):
+        filter_mask = torch.zeros(len(mnist_full), dtype=torch.int)
+        split_idx = torch.randperm(len(mnist_full), generator=torch.Generator().manual_seed(42))
+        bootstrap_size = self.train_size if self.train_size is not None else 55000
+        filter_mask.scatter_(0, split_idx[:bootstrap_size], 1)
+        if self.exclude is not None:
+            filter_mask[mnist_full.targets == self.exclude] = 0
+
+        mnist_train = Subset(mnist_full, torch.nonzero(filter_mask).squeeze())
+        mnist_val = Subset(mnist_full, split_idx[55000:])
+
+        return mnist_train, mnist_val
 
     def _get_transforms(self, stage):
         if self.apply_noise and stage == 'fit':
@@ -46,13 +60,13 @@ class MNISTDataModule(pl.LightningDataModule):
         return transforms.Compose(transform)
 
     def train_dataloader(self):
-        return DataLoader(self.mnist_train, batch_size=32, num_workers=2)
+        return DataLoader(self.mnist_train, batch_size=32, num_workers=0)
 
     def val_dataloader(self):
-        return DataLoader(self.mnist_val, batch_size=32, num_workers=2)
+        return DataLoader(self.mnist_val, batch_size=32, num_workers=0)
 
     def test_dataloader(self):
-        return DataLoader(self.mnist_test, batch_size=32, num_workers=2)
+        return DataLoader(self.mnist_test, batch_size=32, num_workers=0)
 
 
 class AddNoise:
