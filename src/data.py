@@ -46,7 +46,7 @@ class MNISTDataModule(pl.LightningDataModule):
         if self.exclude is not None:
             filter_mask[mnist_full.targets == self.exclude] = 0
 
-        mnist_train = Subset(mnist_full, torch.nonzero(filter_mask).squeeze())
+        mnist_train = Subset(mnist_full, filter_mask.nonzero(as_tuple=False).squeeze())
         mnist_val = Subset(mnist_full, split_idx[55000:])
 
         return mnist_train, mnist_val
