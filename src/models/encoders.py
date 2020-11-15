@@ -5,6 +5,7 @@ from math import pow
 import torch
 import torch.nn as nn
 
+import utils
 from utils import pairwise
 
 
@@ -86,17 +87,7 @@ class StackedEncoder(DenseEncoder):
     def _freeze_layers(self):
         cut_off = self._current_layer - 1
         for m in self.layers[:cut_off].modules():
-            if isinstance(m, nn.Linear):
-                if m.weight is not None:
-                    m.weight.requires_grad_(False)
-                if m.bias is not None:
-                    m.bias.requires_grad_(False)
-            elif isinstance(m, nn.BatchNorm1d):
-                if m.weight is not None:
-                    m.weight.requires_grad_(False)
-                if m.bias is not None:
-                    m.bias.requires_grad_(False)
-                m.eval()
+            utils.freeze_layer(m)
 
     def train(self, mode=True):
         super().train(mode)
