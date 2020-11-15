@@ -40,15 +40,15 @@ def _build_networks(model_type, input_shape, latent_dim):
 
 def _build_bottleneck(model_type, latent_dim):
     if model_type == 'vanilla' or model_type == 'stacked' or model_type == 'denoising':
-        bottleneck = bottlenecks.IdentityBottleneck()
+        bottleneck = bottlenecks.IdentityBottleneck(latent_dim)
     elif model_type == 'vae':
-        bottleneck = bottlenecks.VariationalBottleneck()
+        bottleneck = bottlenecks.VariationalBottleneck(latent_dim)
     elif model_type == 'beta_vae_strict':
-        bottleneck = bottlenecks.VariationalBottleneck(beta=2.)
+        bottleneck = bottlenecks.VariationalBottleneck(latent_dim, beta=2.)
     elif model_type == 'beta_vae_loose':
-        bottleneck = bottlenecks.VariationalBottleneck(beta=0.5)
+        bottleneck = bottlenecks.VariationalBottleneck(latent_dim, beta=0.5)
     elif model_type == 'sparse':
-        bottleneck = bottlenecks.SparseBottleneck(sparsity=0.1)
+        bottleneck = bottlenecks.SparseBottleneck(latent_dim, sparsity=0.1)
     elif model_type == 'vq':
         bottleneck = bottlenecks.VectorQuantizedBottleneck(latent_dim, num_categories=512)
     else:

@@ -55,7 +55,7 @@ class TestAnomalyDetection(unittest.TestCase):
 class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCase):
     def setUp(self):
         encoder = encoders.DenseEncoder((1, 32, 32), 3, 64)
-        bottleneck = bottlenecks.VariationalBottleneck()
+        bottleneck = bottlenecks.VariationalBottleneck(32)
         self.net = Classifier(encoder, bottleneck, 32, 10)
         self.test_inputs = torch.randn(16, 1, 32, 32)
         self.output_shape = torch.Size((16, 10))

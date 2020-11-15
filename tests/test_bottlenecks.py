@@ -9,7 +9,7 @@ from models import bottlenecks
 
 class TestIdentityBottleneck(unittest.TestCase):
     def setUp(self):
-        self.neck = bottlenecks.IdentityBottleneck()
+        self.neck = bottlenecks.IdentityBottleneck(32)
 
     def test_forward(self):
         inputs = torch.randn(16, 32)
@@ -18,10 +18,13 @@ class TestIdentityBottleneck(unittest.TestCase):
         self.assertIs(inputs, outputs)
         self.assertEqual(0., loss)
 
+    def test_sample(self):
+        self.assertIsNone(self.neck.sample(1))  # Cannot sample from this bottleneck
+
 
 class TestVariationalBottleneck(unittest.TestCase):
     def setUp(self):
-        self.neck = bottlenecks.VariationalBottleneck()
+        self.neck = bottlenecks.VariationalBottleneck(1)
 
     @torch.no_grad()
     def test_forward(self):
@@ -52,10 +55,16 @@ class TestVariationalBottleneck(unittest.TestCase):
 
         self.assertAlmostEqual(expected_kl_div, actual_kl_div.numpy(), delta=0.05)
 
+    def test_sample(self):
+        sampled_latent = self.neck.sample(1000000)
+        self.assertEqual(torch.Size((1000000, self.neck.latent_dim)), sampled_latent.shape)
+        self.assertAlmostEqual(0, sampled_latent.numpy().mean(), places=2)
+        self.assertAlmostEqual(1, sampled_latent.numpy().std(), places=2)
+
 
 class TestSparseBottleneck(unittest.TestCase):
     def setUp(self):
-        self.neck = bottlenecks.SparseBottleneck(0.5)
+        self.neck = bottlenecks.SparseBottleneck(2, 0.5)
 
     @torch.no_grad()
     def test_forward(self):
@@ -82,6 +91,9 @@ class TestSparseBottleneck(unittest.TestCase):
         _, actual_kl_div = self.neck(inputs)
 
         self.assertAlmostEqual(expected_kl_div, actual_kl_div.numpy(), delta=0.01)
+
+    def test_sample(self):
+        self.assertIsNone(self.neck.sample(1))  # Cannot sample from this bottleneck
 
 
 class TestVectorQuantizedBottleneck(unittest.TestCase):
@@ -133,3 +145,9 @@ class TestVectorQuantizedBottleneck(unittest.TestCase):
             self.assertFalse((inputs.grad == 0.).all())
         with self.subTest(embedding_grad='no_grad'):
             self.assertTrue((self.neck.embeddings.grad == 0.).all())
+
+    def test_sample(self):
+        sampled_latent = self.neck.sample(10)
+        self.assertEqual(torch.Size((10, self.neck.latent_dim)), sampled_latent.shape)
+        dist = (self.neck.embeddings - sampled_latent.unsqueeze(-1)) ** 2
+        self.assertTrue(torch.all(torch.any(dist == 0, dim=2)))  # Each entry in sampled latent is in embedding

@@ -3,12 +3,20 @@ import torch.nn as nn
 
 
 class Bottleneck(nn.Module):
+    def __init__(self, latent_dim):
+        super(Bottleneck, self).__init__()
+        self.latent_dim = latent_dim
+
     def forward(self, encoded):
         """Calculate latent code and loss."""
         raise NotImplementedError
 
     def _loss(self, *args, **kwargs):
         """Calculate the loss of the bottleneck."""
+        raise NotImplementedError
+
+    def sample(self, n):
+        """Sample n data points from the latent space."""
         raise NotImplementedError
 
 
@@ -19,10 +27,13 @@ class IdentityBottleneck(Bottleneck):
     def _loss(self):
         return 0
 
+    def sample(self, n):
+        return None
 
-class VariationalBottleneck(nn.Module):
-    def __init__(self, beta=1.):
-        super().__init__()
+
+class VariationalBottleneck(Bottleneck):
+    def __init__(self, latent_dim, beta=1.):
+        super().__init__(latent_dim)
 
         self.beta = beta
 
@@ -42,10 +53,13 @@ class VariationalBottleneck(nn.Module):
 
         return kl_div
 
+    def sample(self, n):
+        return torch.randn(n, self.latent_dim)
+
 
 class SparseBottleneck(Bottleneck):
-    def __init__(self, sparsity, beta=1.):
-        super().__init__()
+    def __init__(self, latent_dim, sparsity, beta=1.):
+        super().__init__(latent_dim)
 
         self.sparsity = sparsity
         self.beta = beta
@@ -65,12 +79,13 @@ class SparseBottleneck(Bottleneck):
 
         return kl_div
 
+    def sample(self, n):
+        return None
+
 
 class VectorQuantizedBottleneck(Bottleneck):
     def __init__(self, latent_dim, num_categories=512, beta=1.):
-        super(VectorQuantizedBottleneck, self).__init__()
-
-        self.latent_dim = latent_dim
+        super(VectorQuantizedBottleneck, self).__init__(latent_dim)
         self.num_categories = num_categories
         self.beta = beta
 
@@ -94,9 +109,7 @@ class VectorQuantizedBottleneck(Bottleneck):
     def _quantize(self, inputs):
         dist = (self.embeddings - inputs.unsqueeze(-1)) ** 2
         dist_idx = torch.argmin(dist, dim=-1)
-        offsets = torch.arange(0, self.latent_dim) * self.num_categories
-        dist_idx_flat = dist_idx + offsets.repeat(inputs.shape[0], 1)
-        latent_code = torch.take(self.embeddings.squeeze(0), dist_idx_flat)
+        latent_code = self._take_from_embedding(dist_idx)
 
         return latent_code
 
@@ -107,6 +120,20 @@ class VectorQuantizedBottleneck(Bottleneck):
         loss = loss.sum(1).mean(0)
 
         return loss
+
+    def sample(self, n):
+        sampled_idx = [torch.randint(self.num_categories, size=(self.latent_dim,)) for _ in range(n)]
+        sampled_idx = torch.stack(sampled_idx)
+        samples = self._take_from_embedding(sampled_idx)
+
+        return samples
+
+    def _take_from_embedding(self, idx):
+        offsets = torch.arange(0, self.latent_dim) * self.num_categories
+        dist_idx_flat = idx + offsets.repeat(idx.shape[0], 1)
+        latent_code = torch.take(self.embeddings.squeeze(0), dist_idx_flat)
+
+        return latent_code
 
 
 class StraightThroughEstimator(torch.autograd.Function):
