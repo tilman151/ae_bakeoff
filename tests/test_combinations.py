@@ -1,8 +1,10 @@
 import unittest
 
 import torch
+import pytorch_lightning as pl
 
 from models import encoders, decoders, bottlenecks
+from data import MNISTDataModule
 from downstream.classification import Classifier
 from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
 
@@ -42,10 +44,10 @@ class TestStackedAutoencoder(unittest.TestCase):
 
 class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCase):
     def setUp(self):
-        encoder = encoders.DenseEncoder((512,), 3, 64)
+        encoder = encoders.DenseEncoder((1, 32, 32), 3, 64)
         bottleneck = bottlenecks.VariationalBottleneck()
         self.net = Classifier(encoder, bottleneck, 32, 10)
-        self.test_inputs = torch.randn(16, 512)
+        self.test_inputs = torch.randn(16, 1, 32, 32)
         self.output_shape = torch.Size((16, 10))
 
     def test_accuracy(self):
@@ -55,3 +57,11 @@ class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCa
 
     def test_layers_frozen(self):
         self._check_frozen(self.net.encoder)
+
+    def test_accuracy_returned_on_test(self):
+        datamodule = MNISTDataModule(data_dir='../data')
+        trainer = pl.Trainer(logger=False)
+        test_results, *_ = trainer.test(self.net, datamodule=datamodule)
+        self.assertIsNotNone(test_results)
+        self.assertLessEqual(0, test_results['test/accuracy'])
+        self.assertGreaterEqual(1, test_results['test/accuracy'])
