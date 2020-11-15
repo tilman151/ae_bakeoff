@@ -3,7 +3,7 @@ import unittest
 import torch
 
 from models import encoders, decoders, bottlenecks
-from lightning import Classifier
+from downstream.classification import Classifier
 from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
 
 
