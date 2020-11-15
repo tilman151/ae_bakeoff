@@ -1,12 +1,16 @@
 import unittest
 
 import numpy as np
+import pytorch_lightning as pl
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 
 from building import build_ae
 from data import MNISTDataModule
 from downstream.anomaly import AnomalyDetection
+from downstream.classification import Classifier
+from models import encoders, bottlenecks
+from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
 
 
 class TestAnomalyDetection(unittest.TestCase):
@@ -46,3 +50,28 @@ class TestAnomalyDetection(unittest.TestCase):
         tpr, fpr, thresholds = self.anomaly_detector.get_test_roc(self.data)
         fig = self.anomaly_detector.plot_roc(tpr, fpr)
         fig.show()
+
+
+class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCase):
+    def setUp(self):
+        encoder = encoders.DenseEncoder((1, 32, 32), 3, 64)
+        bottleneck = bottlenecks.VariationalBottleneck()
+        self.net = Classifier(encoder, bottleneck, 32, 10)
+        self.test_inputs = torch.randn(16, 1, 32, 32)
+        self.output_shape = torch.Size((16, 10))
+
+    def test_accuracy(self):
+        accuracy = self.net._get_accuracy((self.test_inputs, torch.zeros(self.test_inputs.shape[0])))
+        self.assertLessEqual(0, accuracy)
+        self.assertGreaterEqual(1, accuracy)
+
+    def test_layers_frozen(self):
+        self._check_frozen(self.net.encoder)
+
+    def test_accuracy_returned_on_test(self):
+        datamodule = MNISTDataModule(data_dir='../data')
+        trainer = pl.Trainer(logger=False)
+        test_results, *_ = trainer.test(self.net, datamodule=datamodule)
+        self.assertIsNotNone(test_results)
+        self.assertLessEqual(0, test_results['test/accuracy'])
+        self.assertGreaterEqual(1, test_results['test/accuracy'])
