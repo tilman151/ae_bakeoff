@@ -1,6 +1,7 @@
 import unittest
 
 import torch
+import torch.nn as nn
 from torch.utils.data import DataLoader
 
 
@@ -66,6 +67,22 @@ class ModelTestsMixin:
                 with self.subTest(name=param_name):
                     self.assertIsNotNone(param.grad)
                     self.assertNotEqual(0., torch.sum(param.grad ** 2))
+
+
+class FrozenLayerCheckMixin:
+    def _check_frozen(self, layers, should_be_frozen=True):
+        for m in layers.modules():
+            if isinstance(m, nn.Linear):
+                if m.weight is not None:
+                    self.assertEqual(not should_be_frozen, m.weight.requires_grad)
+                if m.bias is not None:
+                    self.assertEqual(not should_be_frozen, m.bias.requires_grad)
+            elif isinstance(m, nn.BatchNorm1d):
+                if m.weight is not None:
+                    self.assertEqual(not should_be_frozen, m.weight.requires_grad)
+                if m.bias is not None:
+                    self.assertEqual(not should_be_frozen, m.bias.requires_grad)
+                self.assertEqual(not should_be_frozen, m.training)
 
 
 class DatasetTestsMixin:

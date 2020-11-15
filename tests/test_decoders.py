@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from models import decoders
-from tests.templates import ModelTestsMixin
+from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
 
 
 class TestDenseEncoder(ModelTestsMixin, unittest.TestCase):
@@ -21,7 +21,7 @@ class TestShallowDecoder(ModelTestsMixin, unittest.TestCase):
         self.net = decoders.ShallowDecoder(32, self.output_shape[1:])
 
 
-class TestStackedDecoder(unittest.TestCase):
+class TestStackedDecoder(unittest.TestCase, FrozenLayerCheckMixin):
     def setUp(self):
         self.output_shape = torch.Size((16, 1, 32, 32))
         self.net = decoders.StackedDecoder(32, 3, self.output_shape[1:])
@@ -48,19 +48,3 @@ class TestStackedDecoder(unittest.TestCase):
         self.net.train()
         self._check_frozen(self.net.layers[2:])
         self._check_frozen(self.net.layers[:2], should_be_frozen=False)
-
-    def _check_frozen(self, layers, should_be_frozen=True):
-        for m in layers.modules():
-            if isinstance(m, nn.Linear):
-                if m.weight is not None:
-                    self.assertEqual(not should_be_frozen, m.weight.requires_grad)
-                if m.bias is not None:
-                    self.assertEqual(not should_be_frozen, m.bias.requires_grad)
-            elif isinstance(m, nn.BatchNorm1d):
-                if m.weight is not None:
-                    self.assertEqual(not should_be_frozen, m.weight.requires_grad)
-                if m.bias is not None:
-                    self.assertEqual(not should_be_frozen, m.bias.requires_grad)
-                self.assertEqual(not should_be_frozen, m.training)
-
-
