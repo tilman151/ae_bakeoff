@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 import numpy as np
 import pytorch_lightning as pl
@@ -10,6 +11,7 @@ from data import MNISTDataModule
 from downstream.anomaly import AnomalyDetection
 from downstream.classification import Classifier
 from downstream.latent import Latent
+from downstream import formatting
 from models import encoders, bottlenecks
 from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
 
@@ -45,12 +47,6 @@ class TestAnomalyDetection(unittest.TestCase):
         self.assertTrue(np.all(thresholds >= np.min(scores)))
         self.assertTrue(np.all(thresholds[1:] <= np.max(scores)))
         self.assertGreaterEqual(thresholds[1], np.max(scores))
-
-    @unittest.skip('Only for visual inspection')
-    def test_roc_plotting(self):
-        tpr, fpr, thresholds = self.anomaly_detector.get_test_roc(self.data)
-        fig = self.anomaly_detector.plot_roc(tpr, fpr)
-        fig.show()
 
 
 class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCase):
@@ -111,3 +107,48 @@ class TestLatent(unittest.TestCase):
         reduced_latents, labels = self.latent_viz.reduce(self.data.val_dataloader())
         self.assertEqual(len(self.data.mnist_val), reduced_latents.shape[0])
         self.assertEqual(len(self.data.mnist_val), labels.shape[0])
+
+
+class TestFormatting(unittest.TestCase):
+    @mock.patch('downstream.formatting.Image.Image.save')
+    def test_save_imagegrid(self, mock_write_jpeg):
+        imagegrid = np.random.random((3, 500, 500))
+        file_name = 'test.jpeg'
+        formatting.save_imagegrid(imagegrid, file_name)
+        mock_write_jpeg.assert_called_with(file_name)
+
+    @mock.patch('downstream.formatting.Image.Image.save')
+    def test__save_gif(self, mock_save):
+        vid = np.random.random((2, 32, 32, 3)) * 255
+        vid = vid.astype(np.uint8)
+        file_name = 'test.gif'
+        formatting._save_gif(vid, file_name, 5, False)
+
+    @mock.patch('downstream.formatting._save_gif')
+    def test_save_video(self, mock_write_video):
+        vid = np.random.random((100, 3, 32, 32))
+        file_name = 'test.mp4'
+        formatting.save_video(vid, file_name)
+
+        written_tensor = mock_write_video.call_args[0][0]
+        self.assertGreaterEqual(255, written_tensor.max())
+        self.assertLessEqual(0, written_tensor.min())
+        self.assertEqual((100, 32, 32, 3), written_tensor.shape)
+
+    @mock.patch('downstream.formatting.save_video')
+    def test_save_oscillating_video(self, mock_write_video):
+        vid = np.random.random((100, 3, 32, 32))
+        file_name = 'test.mp4'
+        formatting.save_oscillating_video(vid, file_name)
+
+        written_tensor = mock_write_video.call_args[0][0]
+        self.assertGreater(written_tensor.shape[0], vid.shape[0] * 2)
+        self.assertEqual(0, np.sum(written_tensor[0] - vid[0]))
+        self.assertEqual(0, np.sum(written_tensor[-1] - vid[0]))
+
+    @unittest.skip('Only for visual inspection')
+    def test_roc_plotting(self):
+        tpr = np.linspace(0, 1, num=50)
+        fpr = np.linspace(1, 0, num=50)
+        fig = formatting._plot_roc(tpr, fpr)
+        fig.show()

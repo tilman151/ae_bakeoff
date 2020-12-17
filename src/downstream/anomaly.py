@@ -42,14 +42,3 @@ class AnomalyDetection:
         labels = torch.cat(labels).numpy()
 
         return labels
-
-    @staticmethod
-    def plot_roc(tpr, fpr):
-        fig = plt.figure(figsize=(5, 5))
-        plt.plot(fpr, tpr)
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.xlim(0, 1)
-        plt.ylim(0, 1)
-
-        return fig
