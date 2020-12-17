@@ -2,6 +2,7 @@ import unittest
 from unittest import mock
 
 import numpy as np
+import matplotlib.pyplot as plt
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import TensorDataset, DataLoader
@@ -41,12 +42,14 @@ class TestAnomalyDetection(unittest.TestCase):
         self.assertEqual(10000, scores.shape[0])  # number of scores is length of test data
 
     def test_roc(self):
-        tpr, fpr, thresholds = self.anomaly_detector.get_test_roc(self.data)
+        tpr, fpr, thresholds, auc = self.anomaly_detector.get_test_roc(self.data)
         test_dataloader = self.data.test_dataloader()
         scores = self.anomaly_detector.score(test_dataloader)
         self.assertTrue(np.all(thresholds >= np.min(scores)))
         self.assertTrue(np.all(thresholds[1:] <= np.max(scores)))
         self.assertGreaterEqual(thresholds[1], np.max(scores))
+        self.assertLessEqual(0, auc)
+        self.assertGreaterEqual(1, auc)
 
 
 class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCase):
@@ -148,7 +151,9 @@ class TestFormatting(unittest.TestCase):
 
     @unittest.skip('Only for visual inspection')
     def test_roc_plotting(self):
+        fig = plt.figure(figsize=(5, 5))
         tpr = np.linspace(0, 1, num=50)
-        fpr = np.linspace(1, 0, num=50)
-        fig = formatting._plot_roc(tpr, fpr)
+        fpr = np.linspace(0, 1, num=50)
+        auc = 0.5
+        formatting._plot_roc(plt.gca(), tpr, fpr, auc)
         fig.show()

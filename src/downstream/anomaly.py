@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-from sklearn.metrics import roc_curve
+from sklearn.metrics import roc_curve, roc_auc_score
 
 
 class AnomalyDetection:
@@ -14,8 +14,9 @@ class AnomalyDetection:
         scores = self.score(test_dataloader)
         anomaly_labels = self.get_test_anomaly_labels(test_dataloader, anomaly_value=datamodule.exclude)
         fpr, tpr, thresholds = roc_curve(anomaly_labels, scores)
+        auc = roc_auc_score(anomaly_labels, scores)
 
-        return fpr, tpr, thresholds
+        return fpr, tpr, thresholds, auc
 
     @torch.no_grad()
     def score(self, dataloader):

@@ -52,18 +52,19 @@ def _save_gif(video, file_name, duration, loop):
              save_all=True, duration=duration, loop=loop)
 
 
-def save_roc_plot(tpr, fpr, file_name):
-    fig = _plot_roc(fpr, tpr)
+def save_roc_plot(tpr, fpr, auc, file_name):
+    fig = plt.figure(figsize=(5, 5))
+    _plot_roc(plt.gca(), fpr, tpr, auc)
     plt.savefig(file_name)
     plt.close(fig)
 
 
-def _plot_roc(fpr, tpr):
-    fig = plt.figure(figsize=(5, 5))
-    plt.plot(fpr, tpr)
-    plt.xlabel('False Positive Rate')
-    plt.ylabel('True Positive Rate')
-    plt.xlim(0, 1)
-    plt.ylim(0, 1)
-
-    return fig
+def _plot_roc(ax, fpr, tpr, auc, title=None):
+    ax.plot(fpr, tpr, label=f'AUC = {auc:.2f}')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.legend(loc='lower right')
+    if title is not None:
+        ax.set_title(title)
