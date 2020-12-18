@@ -71,7 +71,7 @@ class StackedEncoder(DenseEncoder):
     def __init__(self, input_shape, num_layers, latent_dim):
         super().__init__(input_shape, num_layers, latent_dim)
 
-        self._current_layer = 1
+        self.register_buffer('_current_layer', torch.tensor(1), persistent=True)
 
     @property
     def current_layer(self):

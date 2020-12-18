@@ -2,6 +2,7 @@ import warnings
 from functools import reduce
 from math import pow
 
+import torch
 import torch.nn as nn
 
 import utils
@@ -76,7 +77,7 @@ class StackedDecoder(DenseDecoder):
     def __init__(self, latent_dim, num_layers, output_shape):
         super().__init__(latent_dim, num_layers, output_shape)
 
-        self._current_layer = self.num_layers
+        self.register_buffer('_current_layer', torch.tensor(self.num_layers), persistent=True)
 
     @property
     def current_layer(self):
