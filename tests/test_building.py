@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 
 import building
 from models import bottlenecks, encoders, decoders
@@ -101,3 +102,22 @@ class TestBuildingAE(unittest.TestCase):
     @staticmethod
     def _build_nets(model_type, latent_dim):
         return building._build_networks(model_type, (1, 32, 32), latent_dim)
+
+
+class TestBuildingLogger(unittest.TestCase):
+    @mock.patch('os.path.dirname', return_value='/foo')
+    def test__get_log_dir(self, mock_dirname):
+        expected_logdir = '/logs'
+        actual_log_dir = building._get_log_dir()
+        self.assertEqual(expected_logdir, actual_log_dir)
+
+    @mock.patch('os.path.dirname', return_value='/foo')
+    def test_build_logger(self, mock_dirname):
+        with self.subTest(case='without task'):
+            model_type = 'vae'
+            logger = building.build_logger(model_type)
+            self.assertTrue(logger.root_dir.endswith(f'{model_type}_general'))
+        with self.subTest(case='with task'):
+            task = 'anomaly'
+            logger = building.build_logger(model_type, task)
+            self.assertTrue(logger.root_dir.endswith(f'{model_type}_{task}'))

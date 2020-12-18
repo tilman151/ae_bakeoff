@@ -1,3 +1,7 @@
+import os
+
+import pytorch_lightning.loggers as loggers
+
 import data
 import lightning
 from models import encoders, decoders, bottlenecks
@@ -55,3 +59,18 @@ def _build_bottleneck(model_type, latent_dim):
         raise ValueError(f'Unknown model type {model_type}.')
 
     return bottleneck
+
+
+def build_logger(model_type, task='general'):
+    log_dir = _get_log_dir()
+    experiment_name = f'{model_type}_{task}'
+    logger = loggers.TensorBoardLogger(log_dir, experiment_name)
+
+    return logger
+
+
+def _get_log_dir():
+    script_path = os.path.dirname(__file__)
+    log_dir = os.path.normpath(os.path.join(script_path, '..', 'logs'))
+
+    return log_dir

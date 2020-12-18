@@ -1,8 +1,8 @@
 import pytorch_lightning as pl
 
-from building import build_ae, build_datamodule
+from building import build_ae, build_datamodule, build_logger
 
-autoencoders = ['shallow',
+AUTOENCODERS = ['shallow',
                 'vanilla',
                 'stacked',
                 'sparse',
@@ -14,39 +14,49 @@ autoencoders = ['shallow',
 
 
 def run(model_type):
-    assert model_type in autoencoders
+    assert model_type in AUTOENCODERS
     pl.seed_everything(42)
     datamodule = build_datamodule(model_type)
     ae = build_ae(model_type, datamodule.dims)
-    _train(model_type, ae, datamodule)
+    logger = build_logger(model_type)
+    checkpoint_path = _train(model_type, ae, datamodule, logger)
+
+    return checkpoint_path
 
 
-def _train(model_type, ae, datamodule):
+def _train(model_type, ae, datamodule, logger):
     epochs = 60
     if model_type == 'stacked':
-        _train_stacked(ae, datamodule, epochs)
+        trainer = _train_stacked(ae, datamodule, logger, epochs)
     else:
-        _train_normal(ae, datamodule, epochs)
+        trainer = _train_normal(ae, datamodule, logger, epochs)
+    checkpoint_path = trainer.checkpoint_callback.last_model_path
+
+    return checkpoint_path
 
 
-def _train_stacked(ae, datamodule, epochs):
+def _train_stacked(ae, datamodule, logger, epochs):
     num_stacking = ae.encoder.num_layers
-    trainer = pl.Trainer(max_epochs=epochs // num_stacking, deterministic=True)
+    trainer = pl.Trainer(max_epochs=epochs // num_stacking, deterministic=True, logger=logger)
     for i in range(num_stacking):
         trainer.fit(ae, datamodule=datamodule)
         ae.encoder.stack_layer()
         ae.decoder.stack_layer()
 
+    return trainer
 
-def _train_normal(ae, datamodule, epochs):
-    trainer = pl.Trainer(max_epochs=epochs, deterministic=True)
+
+def _train_normal(ae, datamodule, logger, epochs):
+    trainer = pl.Trainer(max_epochs=epochs, deterministic=True, logger=logger)
     trainer.fit(ae, datamodule=datamodule)
+
+    return trainer
 
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run unsupervised autoencoder training.')
-    parser.add_argument('model_type', choices=autoencoders)
+    parser.add_argument('model_type', choices=AUTOENCODERS)
     opt = parser.parse_args()
 
-    run(opt.model_type)
+    print(run(opt.model_type))
