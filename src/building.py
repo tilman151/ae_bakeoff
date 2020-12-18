@@ -66,8 +66,9 @@ def _build_bottleneck(model_type, latent_dim):
     return bottleneck
 
 
-def build_logger(model_type, task='general'):
+def build_logger(model_type, task=None):
     log_dir = _get_log_dir()
+    task = task or 'general'
     experiment_name = f'{model_type}_{task}'
     logger = loggers.TensorBoardLogger(log_dir, experiment_name)
 
