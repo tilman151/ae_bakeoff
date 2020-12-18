@@ -40,6 +40,12 @@ class ResultsMixin:
     def __setitem__(self, key, value):
         self.results[key] = value
 
+    def safe_add(self, model_type, key, value):
+        if model_type in self.keys():
+            self[model_type][key] = value
+        else:
+            self[model_type] = {key: value}
+
     def keys(self):
         return self.results.keys()
 

@@ -2,6 +2,8 @@ import torch
 import torchvision
 import umap
 
+from building import load_ae_from_checkpoint
+
 
 class Latent:
     def __init__(self, autoencoder):
@@ -53,3 +55,10 @@ class Latent:
         reduced_latents = umap.UMAP().fit_transform(latents)
 
         return reduced_latents, labels
+
+    @classmethod
+    def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path):
+        model = load_ae_from_checkpoint(model_type, dm.dims, checkpoint_path)
+        latent = cls(model)
+
+        return latent

@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 import building
 import downstream
 import run
+from downstream import save_imagegrid
 from utils import ResultsMixin
 
 
@@ -29,8 +30,9 @@ class ReproductionRun:
             self.checkpoints[model_type]['anomaly'] = run.run(model_type, anomaly=True)
 
     def perform_downstream(self, model_type):
-        self.perform_classification(model_type)
-        self.perform_anomaly_detection(model_type)
+        # self.perform_classification(model_type)
+        # self.perform_anomaly_detection(model_type)
+        self.perform_sampling(model_type)
 
     def perform_classification(self, model_type):
         pl.seed_everything(42)
@@ -39,8 +41,13 @@ class ReproductionRun:
 
     def perform_anomaly_detection(self, model_type):
         pl.seed_everything(42)
-        checkpoint_path = self.checkpoints[model_type]['general']
+        checkpoint_path = self.checkpoints[model_type]['anomaly']
         self.anomaly_detection_results.add_roc_for(model_type, checkpoint_path)
+
+    def perform_sampling(self, model_type):
+        pl.seed_everything(42)
+        checkpoint_path = self.checkpoints[model_type]['general']
+        self.latent_results.add_samples_for(model_type, checkpoint_path)
 
 
 class Checkpoints(ResultsMixin):
@@ -109,6 +116,27 @@ class AnomalyDownstream(ResultsMixin):
 
 
 class LatentDownstream(ResultsMixin):
+    def add_samples_for(self, model_type, checkpoint_path):
+        data = building.build_datamodule(anomaly=True)
+        latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
+        samples = latent_sampler.sample(16)
+        if samples is not None:
+            self._save_samples(model_type, samples)
+
+    def _save_samples(self, model_type, samples):
+        samples_path = self._get_samples_path(model_type)
+        save_imagegrid(samples, samples_path)
+        self.safe_add(model_type, 'samples', samples_path)
+        self.save()
+
+    def _get_samples_path(self, model_type):
+        log_path = self._get_log_path()
+        samples_path = os.path.join(log_path, 'samples')
+        os.makedirs(samples_path, exist_ok=True)
+        samples_path = os.path.join(samples_path, f'{model_type}_samples.jpeg')
+
+        return samples_path
+
     def _get_results_path(self):
         log_path = self._get_log_path()
         results_path = os.path.join(log_path, 'latent_results.json')
