@@ -10,7 +10,11 @@ from models import encoders, decoders, bottlenecks
 def build_datamodule(model_type, anomaly=False):
     apply_noise = (model_type == 'denoising')
     exclude = 9 if anomaly else None
-    datamodule = data.MNISTDataModule('../data', apply_noise=apply_noise, exclude=exclude)
+    train_size = 550 if model_type == 'classification' else None
+    datamodule = data.MNISTDataModule('../data',
+                                      apply_noise=apply_noise,
+                                      train_size=train_size,
+                                      exclude=exclude)
 
     return datamodule
 

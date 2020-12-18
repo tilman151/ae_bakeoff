@@ -15,6 +15,10 @@ class TestBuildingDataModule(unittest.TestCase):
         dm = building.build_datamodule('vae', anomaly=True)
         self.assertEqual(9, dm.exclude)
 
+    def test_classification(self):
+        dm = building.build_datamodule('classification')
+        self.assertEqual(550, dm.train_size)  # 1% of training data
+
     def test_rest(self):
         rest = ['shallow',
                 'vanilla',
