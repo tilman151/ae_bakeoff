@@ -1,7 +1,7 @@
 import json
 import os
 
-from downstream import save_imagegrid
+from downstream import save_imagegrid, save_oscillating_video
 
 
 class ResultsMixin:
@@ -18,16 +18,28 @@ class ResultsMixin:
         self.results[key] = value
 
     def save_image_result(self, model_type, tag, image):
-        image_path = self._get_images_path(model_type, tag)
+        image_path = self._get_image_path(model_type, tag)
         save_imagegrid(image, image_path)
         self.safe_add(model_type, tag, image_path)
         self.save()
 
-    def _get_images_path(self, model_type, tag):
+    def _get_image_path(self, model_type, tag):
+        return self._get_file_path(model_type, tag, 'jpeg')
+
+    def save_video_result(self, model_type, tag, video):
+        video_path = self._get_video_path(model_type, tag)
+        save_oscillating_video(video, video_path)
+        self.safe_add(model_type, tag, video_path)
+        self.save()
+
+    def _get_video_path(self, model_type, tag):
+        return self._get_file_path(model_type, tag, 'gif')
+
+    def _get_file_path(self, model_type, tag, extension):
         log_path = self._get_log_path()
         samples_path = os.path.join(log_path, tag)
         os.makedirs(samples_path, exist_ok=True)
-        samples_path = os.path.join(samples_path, f'{model_type}.jpeg')
+        samples_path = os.path.join(samples_path, f'{model_type}.{extension}')
 
         return samples_path
 

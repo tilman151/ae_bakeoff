@@ -48,6 +48,7 @@ class ReproductionRun:
         checkpoint_path = self.checkpoints[model_type]['general']
         self.latent_results.add_samples_for(model_type, checkpoint_path)
         self.latent_results.add_reconstructions_for(model_type, checkpoint_path)
+        self.latent_results.add_interpolation_for(model_type, checkpoint_path)
 
 
 class Checkpoints(ResultsMixin):
@@ -129,25 +130,35 @@ class LatentDownstream(ResultsMixin):
     def add_reconstructions_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
-        batch = self._get_reconstruction_data(data, n=16)
+        batch = self._get_data_batch(data, n=16)
         reconstructions = latent_sampler.reconstruct(batch)
         self._save_reconstructions(model_type, reconstructions)
 
-    def _get_reconstruction_data(self, data, n):
-        test_loader = data.test_dataloader()
-        batch, _ = next(iter(test_loader))
-        batch = batch[:n]
-
-        return batch
-
     def _save_reconstructions(self, model_type, reconstructions):
         self.save_image_result(model_type, 'reconstructions', reconstructions)
+
+    def add_interpolation_for(self, model_type, checkpoint_path):
+        data = self._get_datamodule()
+        latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
+        start, end = self._get_data_batch(data, n=2)
+        interpolation = latent_sampler.interpolate(start, end, steps=128)
+        self._save_interpolation(model_type, interpolation)
+
+    def _save_interpolation(self, model_type, interpolation):
+        self.save_video_result(model_type, 'interpolation', interpolation)
 
     def _get_datamodule(self):
         data = building.build_datamodule()
         data.prepare_data()
         data.setup('test')
         return data
+
+    def _get_data_batch(self, data, n):
+        test_loader = data.test_dataloader()
+        batch, _ = next(iter(test_loader))
+        batch = batch[:n]
+
+        return batch
 
     def _get_results_path(self):
         log_path = self._get_log_path()
