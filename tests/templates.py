@@ -70,8 +70,10 @@ class ModelTestsMixin:
 
     def test_scripting(self):
         scripted_net = torch.jit.script(self.net)
-        expected_output = self.net(self.test_inputs)
-        actual_output = scripted_net(self.test_inputs)
+        with torch.random.fork_rng():
+            expected_output = self.net(self.test_inputs)
+        with torch.random.fork_rng():
+            actual_output = scripted_net(self.test_inputs)
         self.assertAlmostEqual(0., torch.sum((expected_output - actual_output) ** 2).item())
 
 
