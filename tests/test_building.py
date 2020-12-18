@@ -19,6 +19,12 @@ class TestBuildingDataModule(unittest.TestCase):
         dm = building.build_datamodule('classification')
         self.assertEqual(550, dm.train_size)  # 1% of training data
 
+    def test_no_model_type(self):
+        dm = building.build_datamodule()
+        self.assertFalse(dm.apply_noise)
+        self.assertIsNone(dm.exclude)
+        self.assertIsNone(dm.train_size)
+
     def test_rest(self):
         rest = ['shallow',
                 'vanilla',
