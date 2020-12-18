@@ -48,7 +48,7 @@ def _build_networks(model_type, input_shape, latent_dim):
 
 
 def _build_bottleneck(model_type, latent_dim):
-    if model_type == 'vanilla' or model_type == 'stacked' or model_type == 'denoising':
+    if model_type == 'vanilla' or model_type == 'stacked' or model_type == 'denoising' or model_type == 'shallow':
         bottleneck = bottlenecks.IdentityBottleneck(latent_dim)
     elif model_type == 'vae':
         bottleneck = bottlenecks.VariationalBottleneck(latent_dim)
