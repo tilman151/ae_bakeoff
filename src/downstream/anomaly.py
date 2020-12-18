@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-import matplotlib.pyplot as plt
+import pytorch_lightning as pl
 from sklearn.metrics import roc_curve, roc_auc_score
 
 
@@ -43,3 +43,10 @@ class AnomalyDetection:
         labels = torch.cat(labels).numpy()
 
         return labels
+
+    @classmethod
+    def from_autoencoder_checkpoint(cls, checkpoint_path):
+        model = pl.LightningModule.load_from_checkpoint(checkpoint_path, map_location='cpu')
+        classifier = cls(model)
+
+        return classifier

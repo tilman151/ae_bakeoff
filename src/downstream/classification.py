@@ -66,3 +66,10 @@ class Classifier(pl.LightningModule):
     def train(self, mode=True):
         super().train(mode)
         self._freeze_encoder()
+
+    @classmethod
+    def from_autoencoder_checkpoint(cls, checkpoint_path, num_classes):
+        model = pl.LightningModule.load_from_checkpoint(checkpoint_path, map_location='cpu')
+        classifier = cls(model.encoder, model.bottleneck, model.latent_dim, num_classes)
+
+        return classifier
