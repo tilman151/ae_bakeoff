@@ -7,9 +7,10 @@ import lightning
 from models import encoders, decoders, bottlenecks
 
 
-def build_datamodule(model_type):
+def build_datamodule(model_type, anomaly=False):
     apply_noise = (model_type == 'denoising')
-    datamodule = data.MNISTDataModule('../data', apply_noise=apply_noise)
+    exclude = 9 if anomaly else None
+    datamodule = data.MNISTDataModule('../data', apply_noise=apply_noise, exclude=exclude)
 
     return datamodule
 

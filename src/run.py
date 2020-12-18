@@ -13,12 +13,13 @@ AUTOENCODERS = ['shallow',
                 'vq']
 
 
-def run(model_type):
+def run(model_type, anomaly):
     assert model_type in AUTOENCODERS
+    task = 'anomaly' if anomaly else None
     pl.seed_everything(42)
-    datamodule = build_datamodule(model_type)
+    datamodule = build_datamodule(model_type, anomaly)
     ae = build_ae(model_type, datamodule.dims)
-    logger = build_logger(model_type)
+    logger = build_logger(model_type, task)
     checkpoint_path = _train(model_type, ae, datamodule, logger)
 
     return checkpoint_path
@@ -57,6 +58,7 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run unsupervised autoencoder training.')
     parser.add_argument('model_type', choices=AUTOENCODERS)
+    parser.add_argument('--anomaly', action='store_true', help='train for anomaly detection')
     opt = parser.parse_args()
 
-    print(run(opt.model_type))
+    print(run(opt.model_type, opt.anomaly))

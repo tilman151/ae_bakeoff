@@ -9,6 +9,11 @@ class TestBuildingDataModule(unittest.TestCase):
     def test_denoising(self):
         dm = building.build_datamodule('denoising')
         self.assertTrue(dm.apply_noise)
+        self.assertIsNone(dm.exclude)
+
+    def test_anomaly(self):
+        dm = building.build_datamodule('vae', anomaly=True)
+        self.assertEqual(9, dm.exclude)
 
     def test_rest(self):
         rest = ['shallow',
@@ -23,6 +28,7 @@ class TestBuildingDataModule(unittest.TestCase):
             with self.subTest(model_type=model_type):
                 dm = building.build_datamodule(model_type)
                 self.assertFalse(dm.apply_noise)
+                self.assertIsNone(dm.exclude)
 
 
 class TestBuildingAE(unittest.TestCase):
