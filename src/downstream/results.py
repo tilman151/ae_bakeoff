@@ -1,6 +1,8 @@
 import json
 import os
 
+import numpy as np
+
 from downstream import save_imagegrid, save_oscillating_video
 
 
@@ -34,6 +36,14 @@ class ResultsMixin:
 
     def _get_video_path(self, model_type, tag):
         return self._get_file_path(model_type, tag, 'gif')
+
+    def save_array_result(self, model_type, tag, *arrays):
+        array_path = self._get_array_path(model_type, tag)
+        np.savez(array_path, *arrays)
+        self.safe_add(model_type, tag, array_path)
+
+    def _get_array_path(self, model_type, tag):
+        return self._get_file_path(model_type, tag, 'npz')
 
     def _get_file_path(self, model_type, tag, extension):
         log_path = self._get_log_path()

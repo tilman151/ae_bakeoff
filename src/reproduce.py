@@ -49,6 +49,7 @@ class ReproductionRun:
         self.latent_results.add_samples_for(model_type, checkpoint_path)
         self.latent_results.add_reconstructions_for(model_type, checkpoint_path)
         self.latent_results.add_interpolation_for(model_type, checkpoint_path)
+        self.latent_results.add_reduction_for(model_type, checkpoint_path)
 
 
 class Checkpoints(ResultsMixin):
@@ -146,6 +147,15 @@ class LatentDownstream(ResultsMixin):
 
     def _save_interpolation(self, model_type, interpolation):
         self.save_video_result(model_type, 'interpolation', interpolation)
+
+    def add_reduction_for(self, model_type, checkpoint_path):
+        data = self._get_datamodule()
+        latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
+        reduction, labels = latent_sampler.reduce(data.test_dataloader())
+        self._save_reduction(model_type, reduction, labels)
+
+    def _save_reduction(self, model_type, reduction, labels):
+        self.save_array_result(model_type, 'reduction', reduction, labels)
 
     def _get_datamodule(self):
         data = building.build_datamodule()
