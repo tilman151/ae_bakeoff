@@ -1,6 +1,7 @@
 import os
 
 import pytorch_lightning.loggers as loggers
+import torch
 
 import data
 import lightning
@@ -67,8 +68,9 @@ def _build_bottleneck(model_type, latent_dim):
 
 
 def load_ae_from_checkpoint(model_type, input_shape, checkpoint_path):
+    checkpoint = torch.load(checkpoint_path)
     model = build_ae(model_type, input_shape)
-    model.on_load_checkpoint(checkpoint_path)
+    model.load_state_dict(checkpoint['state_dict'])
 
     return model
 
