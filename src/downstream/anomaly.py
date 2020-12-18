@@ -11,6 +11,8 @@ class AnomalyDetection:
         self.autoencoder.eval()
 
     def get_test_roc(self, datamodule):
+        datamodule.prepare_data()
+        datamodule.setup('test')
         test_dataloader = datamodule.test_dataloader()
         scores = self.score(test_dataloader)
         anomaly_labels = self.get_test_anomaly_labels(test_dataloader, anomaly_value=datamodule.exclude)
