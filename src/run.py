@@ -13,7 +13,7 @@ AUTOENCODERS = ['shallow',
                 'vq']
 
 
-def run(model_type, anomaly):
+def run(model_type, anomaly=False):
     assert model_type in AUTOENCODERS
     task = 'anomaly' if anomaly else None
     pl.seed_everything(42)
