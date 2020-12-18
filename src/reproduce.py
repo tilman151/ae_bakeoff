@@ -5,8 +5,7 @@ import pytorch_lightning as pl
 import building
 import downstream
 import run
-from downstream import save_imagegrid
-from utils import ResultsMixin
+from downstream.results import ResultsMixin
 
 
 class ReproductionRun:
@@ -32,7 +31,7 @@ class ReproductionRun:
     def perform_downstream(self, model_type):
         # self.perform_classification(model_type)
         # self.perform_anomaly_detection(model_type)
-        self.perform_sampling(model_type)
+        self.perform_latent_tasks(model_type)
 
     def perform_classification(self, model_type):
         pl.seed_everything(42)
@@ -44,10 +43,11 @@ class ReproductionRun:
         checkpoint_path = self.checkpoints[model_type]['anomaly']
         self.anomaly_detection_results.add_roc_for(model_type, checkpoint_path)
 
-    def perform_sampling(self, model_type):
+    def perform_latent_tasks(self, model_type):
         pl.seed_everything(42)
         checkpoint_path = self.checkpoints[model_type]['general']
         self.latent_results.add_samples_for(model_type, checkpoint_path)
+        self.latent_results.add_reconstructions_for(model_type, checkpoint_path)
 
 
 class Checkpoints(ResultsMixin):
@@ -117,25 +117,37 @@ class AnomalyDownstream(ResultsMixin):
 
 class LatentDownstream(ResultsMixin):
     def add_samples_for(self, model_type, checkpoint_path):
-        data = building.build_datamodule(anomaly=True)
+        data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
         samples = latent_sampler.sample(16)
         if samples is not None:
             self._save_samples(model_type, samples)
 
     def _save_samples(self, model_type, samples):
-        samples_path = self._get_samples_path(model_type)
-        save_imagegrid(samples, samples_path)
-        self.safe_add(model_type, 'samples', samples_path)
-        self.save()
+        self.save_image_result(model_type, 'samples', samples)
 
-    def _get_samples_path(self, model_type):
-        log_path = self._get_log_path()
-        samples_path = os.path.join(log_path, 'samples')
-        os.makedirs(samples_path, exist_ok=True)
-        samples_path = os.path.join(samples_path, f'{model_type}_samples.jpeg')
+    def add_reconstructions_for(self, model_type, checkpoint_path):
+        data = self._get_datamodule()
+        latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
+        batch = self._get_reconstruction_data(data, n=16)
+        reconstructions = latent_sampler.reconstruct(batch)
+        self._save_reconstructions(model_type, reconstructions)
 
-        return samples_path
+    def _get_reconstruction_data(self, data, n):
+        test_loader = data.test_dataloader()
+        batch, _ = next(iter(test_loader))
+        batch = batch[:n]
+
+        return batch
+
+    def _save_reconstructions(self, model_type, reconstructions):
+        self.save_image_result(model_type, 'reconstructions', reconstructions)
+
+    def _get_datamodule(self):
+        data = building.build_datamodule()
+        data.prepare_data()
+        data.setup('test')
+        return data
 
     def _get_results_path(self):
         log_path = self._get_log_path()
