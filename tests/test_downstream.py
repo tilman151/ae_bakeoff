@@ -9,9 +9,7 @@ from torch.utils.data import TensorDataset, DataLoader
 
 from building import build_ae
 from data import MNISTDataModule
-from downstream.anomaly import AnomalyDetection
-from downstream.classification import Classifier
-from downstream.latent import Latent
+from downstream import AnomalyDetection, Classifier, Latent
 from downstream import formatting
 from models import encoders, bottlenecks
 from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
@@ -155,5 +153,5 @@ class TestFormatting(unittest.TestCase):
         tpr = np.linspace(0, 1, num=50)
         fpr = np.linspace(0, 1, num=50)
         auc = 0.5
-        formatting._plot_roc(plt.gca(), tpr, fpr, auc)
+        formatting.plot_roc(plt.gca(), tpr, fpr, auc)
         fig.show()
