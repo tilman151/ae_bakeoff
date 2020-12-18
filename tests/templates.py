@@ -68,6 +68,12 @@ class ModelTestsMixin:
                     self.assertIsNotNone(param.grad)
                     self.assertNotEqual(0., torch.sum(param.grad ** 2))
 
+    def test_scripting(self):
+        scripted_net = torch.jit.script(self.net)
+        expected_output = self.net(self.test_inputs)
+        actual_output = scripted_net(self.test_inputs)
+        self.assertAlmostEqual(0., torch.sum((expected_output - actual_output) ** 2).item())
+
 
 class FrozenLayerCheckMixin:
     def _check_frozen(self, layers, should_be_frozen=True):
