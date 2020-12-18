@@ -3,7 +3,7 @@ import torch
 from torch import nn as nn
 
 import utils
-from lightning import Autoencoder
+from building import load_ae_from_checkpoint
 
 
 class Classifier(pl.LightningModule):
@@ -69,8 +69,8 @@ class Classifier(pl.LightningModule):
         self._freeze_encoder()
 
     @classmethod
-    def from_autoencoder_checkpoint(cls, checkpoint_path, num_classes):
-        model = Autoencoder.load_from_checkpoint(checkpoint_path, map_location='cpu')
-        classifier = cls(model.encoder, model.bottleneck, model.latent_dim, num_classes)
+    def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path):
+        model = load_ae_from_checkpoint(model_type, dm.dims, checkpoint_path)
+        classifier = cls(model.encoder, model.bottleneck, dm.num_classes)
 
         return classifier

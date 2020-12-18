@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from sklearn.metrics import roc_curve, roc_auc_score
 
-from lightning import Autoencoder
+from building import load_ae_from_checkpoint
 
 
 class AnomalyDetection:
@@ -46,8 +46,8 @@ class AnomalyDetection:
         return labels
 
     @classmethod
-    def from_autoencoder_checkpoint(cls, checkpoint_path):
-        model = Autoencoder.load_from_checkpoint(checkpoint_path, map_location='cpu')
+    def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path):
+        model = load_ae_from_checkpoint(model_type, dm.dims, checkpoint_path)
         classifier = cls(model)
 
         return classifier
