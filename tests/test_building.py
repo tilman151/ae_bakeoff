@@ -20,10 +20,16 @@ class TestBuildingDataModule(unittest.TestCase):
         self.assertEqual(550, dm.train_size)  # 1% of training data
 
     def test_no_model_type(self):
-        dm = building.build_datamodule()
-        self.assertFalse(dm.apply_noise)
-        self.assertIsNone(dm.exclude)
-        self.assertIsNone(dm.train_size)
+        with self.subTest(case='default'):
+            dm = building.build_datamodule()
+            self.assertFalse(dm.apply_noise)
+            self.assertIsNone(dm.exclude)
+            self.assertIsNone(dm.train_size)
+        with self.subTest(case='anomaly'):
+            dm = building.build_datamodule(anomaly=True)
+            self.assertFalse(dm.apply_noise)
+            self.assertEqual(9, dm.exclude)
+            self.assertIsNone(dm.train_size)
 
     def test_rest(self):
         rest = ['shallow',
