@@ -17,6 +17,7 @@ class MNISTDataModule(pl.LightningDataModule):
                           transforms.ToTensor()]
 
         self.dims = (1, 32, 32)
+        self.num_classes = 10 if exclude is None else 9
         self.apply_noise = apply_noise
         self.train_size = train_size
         self.exclude = exclude
