@@ -66,6 +66,13 @@ def _build_bottleneck(model_type, latent_dim):
     return bottleneck
 
 
+def load_ae_from_checkpoint(model_type, input_shape, checkpoint_path):
+    model = build_ae(model_type, input_shape)
+    model.on_load_checkpoint(checkpoint_path)
+
+    return model
+
+
 def build_logger(model_type, task=None):
     log_dir = _get_log_dir()
     task = task or 'general'
