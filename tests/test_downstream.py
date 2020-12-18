@@ -54,9 +54,12 @@ class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCa
     def setUp(self):
         encoder = encoders.DenseEncoder((1, 32, 32), 3, 64)
         bottleneck = bottlenecks.VariationalBottleneck(32)
-        self.net = Classifier(encoder, bottleneck, 32, 10)
+        self.net = Classifier(encoder, bottleneck, 10)
         self.test_inputs = torch.randn(16, 1, 32, 32)
         self.output_shape = torch.Size((16, 10))
+
+    def test_latent_dim(self):
+        self.assertEqual(self.net.bottleneck.latent_dim, self.net.latent_dim)
 
     def test_accuracy(self):
         accuracy = self.net._get_accuracy((self.test_inputs, torch.zeros(self.test_inputs.shape[0])))

@@ -7,16 +7,16 @@ from lightning import Autoencoder
 
 
 class Classifier(pl.LightningModule):
-    def __init__(self, encoder, bottleneck, latent_dim, num_classes):
+    def __init__(self, encoder, bottleneck, num_classes):
         super(Classifier, self).__init__()
 
         self.encoder = encoder
         self.bottleneck = bottleneck
-        self.latent_dim = latent_dim
+        self.latent_dim = self.bottleneck.latent_dim
         self.num_classes = num_classes
 
         self.criterion = nn.CrossEntropyLoss()
-        self.classifier = nn.Linear(latent_dim, num_classes)
+        self.classifier = nn.Linear(self.latent_dim, self.num_classes)
 
         self._freeze_encoder()
 
