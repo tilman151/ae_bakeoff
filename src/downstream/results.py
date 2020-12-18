@@ -41,6 +41,7 @@ class ResultsMixin:
         array_path = self._get_array_path(model_type, tag)
         np.savez(array_path, *arrays)
         self.safe_add(model_type, tag, array_path)
+        self.save()
 
     def _get_array_path(self, model_type, tag):
         return self._get_file_path(model_type, tag, 'npz')

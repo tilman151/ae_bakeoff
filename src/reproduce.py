@@ -5,6 +5,7 @@ import pytorch_lightning as pl
 import building
 import downstream
 import run
+import utils
 from downstream.results import ResultsMixin
 
 
@@ -20,6 +21,7 @@ class ReproductionRun:
             self.train_all()
             self.checkpoints.save()
         for model_type in self.checkpoints.keys():
+            print(f'Perform downstream tasks for {model_type}...')
             self.perform_downstream(model_type)
 
     def train_all(self):
@@ -29,21 +31,24 @@ class ReproductionRun:
             self.checkpoints[model_type]['anomaly'] = run.run(model_type, anomaly=True)
 
     def perform_downstream(self, model_type):
-        # self.perform_classification(model_type)
-        # self.perform_anomaly_detection(model_type)
+        self.perform_classification(model_type)
+        self.perform_anomaly_detection(model_type)
         self.perform_latent_tasks(model_type)
 
     def perform_classification(self, model_type):
+        print('Classification...')
         pl.seed_everything(42)
         checkpoint_path = self.checkpoints[model_type]['general']
         self.classification_results.add_accuracy_for(model_type, checkpoint_path)
 
     def perform_anomaly_detection(self, model_type):
+        print('Anomaly Detection...')
         pl.seed_everything(42)
         checkpoint_path = self.checkpoints[model_type]['anomaly']
         self.anomaly_detection_results.add_roc_for(model_type, checkpoint_path)
 
     def perform_latent_tasks(self, model_type):
+        print('Latent Space Visualization...')
         pl.seed_everything(42)
         checkpoint_path = self.checkpoints[model_type]['general']
         self.latent_results.add_samples_for(model_type, checkpoint_path)
@@ -78,7 +83,8 @@ class ClassificationDownstream(ResultsMixin):
         return accuracy
 
     def _get_classification_trainer(self):
-        checkpoint_callback = pl.callbacks.ModelCheckpoint('val/accuracy', mode='max')
+        tmp_checkpoint_dir = utils.tempdir()
+        checkpoint_callback = pl.callbacks.ModelCheckpoint(tmp_checkpoint_dir, 'val/accuracy', mode='max')
         early_stop_callback = pl.callbacks.EarlyStopping('val/accuracy', mode='max')
         trainer = pl.Trainer(logger=False,
                              max_epochs=20,

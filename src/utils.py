@@ -1,4 +1,7 @@
+import atexit
 import itertools
+import shutil
+import tempfile
 
 import torch.nn as nn
 
@@ -23,3 +26,10 @@ def freeze_layer(m):
         if m.bias is not None:
             m.bias.requires_grad_(False)
         m.eval()
+
+
+def tempdir():
+    tempdir_path = tempfile.mkdtemp()
+    atexit.register(shutil.rmtree, tempdir_path)
+
+    return tempdir_path
