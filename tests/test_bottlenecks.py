@@ -1,8 +1,8 @@
 import unittest
 
-import torch
 import numpy as np
 import scipy.stats
+import torch
 
 from models import bottlenecks
 
@@ -144,7 +144,8 @@ class TestVectorQuantizedBottleneck(unittest.TestCase):
         with self.subTest(input_grad='has_grad'):
             self.assertFalse((inputs.grad == 0.).all())
         with self.subTest(embedding_grad='no_grad'):
-            self.assertTrue((self.neck.embeddings.grad == 0.).all())
+            has_no_grad = (self.neck.embeddings.grad is None) or (self.neck.embeddings.grad == 0.).all()
+            self.assertTrue(has_no_grad)
 
     def test_sample(self):
         sampled_latent = self.neck.sample(10)
