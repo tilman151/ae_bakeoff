@@ -9,11 +9,9 @@ from models import encoders, decoders, bottlenecks
 
 
 def build_datamodule(model_type=None, anomaly=False):
-    apply_noise = (model_type == 'denoising')
     exclude = 9 if anomaly else None
     train_size = 550 if model_type == 'classification' else None
     datamodule = data.MNISTDataModule('../data',
-                                      apply_noise=apply_noise,
                                       train_size=train_size,
                                       exclude=exclude)
 
@@ -22,9 +20,10 @@ def build_datamodule(model_type=None, anomaly=False):
 
 def build_ae(model_type, input_shape):
     latent_dim = 32
+    noise_ratio = 0.1 if model_type == 'denoising' else None
     encoder, decoder = _build_networks(model_type, input_shape, latent_dim)
     bottleneck = _build_bottleneck(model_type, latent_dim)
-    ae = lightning.Autoencoder(encoder, bottleneck, decoder, lr=0.001)
+    ae = lightning.Autoencoder(encoder, bottleneck, decoder, lr=0.001, noise_ratio=noise_ratio)
 
     return ae
 

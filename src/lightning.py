@@ -1,10 +1,10 @@
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import pytorch_lightning as pl
 
 
 class Autoencoder(pl.LightningModule):
-    def __init__(self, encoder, bottleneck, decoder, lr=0.01):
+    def __init__(self, encoder, bottleneck, decoder, lr=0.01, noise_ratio=None):
         super().__init__()
 
         self.encoder = encoder
@@ -12,12 +12,15 @@ class Autoencoder(pl.LightningModule):
         self.decoder = decoder
 
         self.lr = lr
+        self.noise_ratio = noise_ratio or 0.
         self.criterion_recon = nn.BCELoss(reduction='none')
+        self.add_noise = AddNoise(self.noise_ratio)
 
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
     def forward(self, inputs):
+        inputs = self.add_noise(inputs)
         encoded = self.encoder(inputs)
         latent_code, _ = self.bottleneck(encoded)
         decoded = self.decoder(latent_code)
@@ -57,7 +60,8 @@ class Autoencoder(pl.LightningModule):
         self.logger.experiment.add_images(f'{mode}/reconstructions', comparison, self.global_step)
 
     def _get_losses(self, inputs):
-        encoded = self.encoder(inputs)
+        noisy_inputs = self.add_noise(inputs)
+        encoded = self.encoder(noisy_inputs)
         latent_code, bottleneck_loss = self.bottleneck(encoded)
         decoded = self.decoder(latent_code)
 
@@ -67,3 +71,14 @@ class Autoencoder(pl.LightningModule):
         return loss, bottleneck_loss, recon_loss
 
 
+class AddNoise(nn.Module):
+    def __init__(self, noise_ratio):
+        super().__init__()
+        self.noise_ratio = noise_ratio
+
+    def forward(self, img):
+        if self.training and self.noise_ratio > 0:
+            img = img + torch.randn_like(img) * self.noise_ratio
+            img = torch.clamp(img, min=0., max=1.)
+
+        return img

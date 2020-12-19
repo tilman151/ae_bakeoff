@@ -6,11 +6,6 @@ from models import bottlenecks, encoders, decoders
 
 
 class TestBuildingDataModule(unittest.TestCase):
-    def test_denoising(self):
-        dm = building.build_datamodule('denoising')
-        self.assertTrue(dm.apply_noise)
-        self.assertIsNone(dm.exclude)
-
     def test_anomaly(self):
         dm = building.build_datamodule('vae', anomaly=True)
         self.assertEqual(9, dm.exclude)
@@ -22,12 +17,10 @@ class TestBuildingDataModule(unittest.TestCase):
     def test_no_model_type(self):
         with self.subTest(case='default'):
             dm = building.build_datamodule()
-            self.assertFalse(dm.apply_noise)
             self.assertIsNone(dm.exclude)
             self.assertIsNone(dm.train_size)
         with self.subTest(case='anomaly'):
             dm = building.build_datamodule(anomaly=True)
-            self.assertFalse(dm.apply_noise)
             self.assertEqual(9, dm.exclude)
             self.assertIsNone(dm.train_size)
 
@@ -43,7 +36,6 @@ class TestBuildingDataModule(unittest.TestCase):
         for model_type in rest:
             with self.subTest(model_type=model_type):
                 dm = building.build_datamodule(model_type)
-                self.assertFalse(dm.apply_noise)
                 self.assertIsNone(dm.exclude)
 
 
@@ -124,6 +116,14 @@ class TestBuildingAE(unittest.TestCase):
     @staticmethod
     def _build_nets(model_type, latent_dim):
         return building._build_networks(model_type, (1, 32, 32), latent_dim)
+
+    def test_denoising_build(self):
+        with self.subTest(model_type='denoising'):
+            ae = building.build_ae('denoising', (1, 32, 32))
+            self.assertNotEqual(0., ae.noise_ratio)
+        with self.subTest(model_type='not denoising'):
+            ae = building.build_ae('vanilla', (1, 32, 32))
+            self.assertEqual(0., ae.noise_ratio)
 
 
 class TestBuildingLogger(unittest.TestCase):
