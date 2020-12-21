@@ -1,5 +1,6 @@
 import os
 
+import pytablewriter
 import pytorch_lightning as pl
 
 import building
@@ -22,7 +23,10 @@ class ReproductionRun:
             self.checkpoints.save()
         for model_type in self.checkpoints.keys():
             print(f'Perform downstream tasks for {model_type}...')
-            self.perform_downstream(model_type)
+        #    self.perform_downstream(model_type)
+        self.classification_results.render()
+        # self.render_roc_plot()
+        # self.render_reduction_plot()
 
     def train_all(self):
         for model_type in run.AUTOENCODERS:
@@ -92,6 +96,20 @@ class ClassificationDownstream(ResultsMixin):
                              early_stop_callback=early_stop_callback)
 
         return trainer
+
+    def render(self):
+        print('Render classification table...')
+        markdown_table = pytablewriter.MarkdownTableWriter(table_name='Classification Results',
+                                                           headers=list(self.keys()),
+                                                           value_matrix=[list(self.values())])
+        markdown_file = self._get_output_path()
+        markdown_table.dump(markdown_file)
+
+    def _get_output_path(self):
+        log_path = self._get_log_path()
+        output_path = os.path.join(log_path, 'classification.md')
+
+        return output_path
 
     def _get_results_path(self):
         log_path = self._get_log_path()

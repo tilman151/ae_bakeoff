@@ -63,6 +63,9 @@ class ResultsMixin:
     def keys(self):
         return self.results.keys()
 
+    def values(self):
+        return self.results.values()
+
     def empty(self):
         return not self.results
 
@@ -89,6 +92,12 @@ class ResultsMixin:
             raise FileNotFoundError(f'No checkpoint file found at {checkpoint_path}')
 
         return checkpoints
+
+    def render(self):
+        raise NotImplementedError
+
+    def _get_output_path(self):
+        raise NotImplementedError
 
     def _get_results_path(self):
         raise NotImplementedError
