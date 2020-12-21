@@ -1,5 +1,5 @@
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image
 
 
@@ -66,5 +66,11 @@ def plot_roc(ax, fpr, tpr, auc, title=None):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.legend(loc='lower right')
+    if title is not None:
+        ax.set_title(title)
+
+
+def plot_reduction(ax, features, labels, title=None):
+    ax.scatter(features[:, 0], features[:, 1], c=labels)
     if title is not None:
         ax.set_title(title)

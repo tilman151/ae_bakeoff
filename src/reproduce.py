@@ -1,6 +1,7 @@
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pytablewriter
 import pytorch_lightning as pl
 
@@ -224,6 +225,29 @@ class LatentDownstream(ResultsMixin):
         batch = batch[:n]
 
         return batch
+
+    def render(self):
+        num_subplots = len(self.keys())
+        axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=5)
+        for ax, model_type in zip(axes, self.keys()):
+            features, labels = self._load_reduction(model_type)
+            downstream.plot_reduction(ax, features, labels, model_type)
+        plt.savefig(self._get_output_path())
+        plt.close()
+
+    def _load_reduction(self, model_type):
+        file_path = self[model_type]['reduction']
+        data = np.load(file_path)
+        features = data['arr_0']
+        labels = data['arr_1']
+
+        return features, labels
+
+    def _get_output_path(self):
+        log_path = self._get_log_path()
+        output_path = os.path.join(log_path, 'reduction.png')
+
+        return output_path
 
     def _get_results_path(self):
         log_path = self._get_log_path()
