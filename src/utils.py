@@ -37,13 +37,13 @@ def tempdir():
 
 
 def get_axes_grid(num_subplots, ncols, ax_size):
-    axes = _get_axes(num_subplots, ncols, ax_size)
+    fig, axes = _get_grid(num_subplots, ncols, ax_size)
     _deactivate_unused_axes(axes, num_subplots)
 
-    return axes
+    return fig, axes
 
 
-def _get_axes(num_subplots, ncols, ax_size):
+def _get_grid(num_subplots, ncols, ax_size):
     nrows = num_subplots // num_subplots
     nrows += 1 if nrows * ncols < num_subplots else 0
     figsize = (ax_size * ncols, ax_size * nrows)
@@ -52,7 +52,7 @@ def _get_axes(num_subplots, ncols, ax_size):
                              sharex='all',
                              figsize=figsize)
     axes = axes.ravel()
-    return axes
+    return fig, axes
 
 
 def _deactivate_unused_axes(axes, num_subplots):

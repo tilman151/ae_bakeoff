@@ -71,6 +71,9 @@ def plot_roc(ax, fpr, tpr, auc, title=None):
 
 
 def plot_reduction(ax, features, labels, title=None):
-    ax.scatter(features[:, 0], features[:, 1], c=labels)
+    classes = np.unique(labels)
+    for cls, color in zip(classes, plt.cm.get_cmap('tab10').colors):
+        class_features = features[labels == cls]
+        ax.scatter(class_features[:, 0], class_features[:, 1], c=[color], label=cls, s=[2], alpha=0.5)
     if title is not None:
         ax.set_title(title)

@@ -147,7 +147,7 @@ class AnomalyDownstream(ResultsMixin):
 
     def render(self):
         num_subplots = len(self.keys())
-        axes = utils.get_axes_grid(num_subplots, ncols=4, ax_size=4)
+        fig, axes = utils.get_axes_grid(num_subplots, ncols=4, ax_size=4)
         self._plot_rocs(axes)
         plt.savefig(self._get_output_path())
         plt.close()
@@ -228,12 +228,16 @@ class LatentDownstream(ResultsMixin):
 
     def render(self):
         num_subplots = len(self.keys())
-        axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=5)
+        fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=6)
+        self._plot_reductions(axes)
+        self._make_legend(fig, axes)
+        plt.savefig(self._get_output_path())
+        plt.close()
+
+    def _plot_reductions(self, axes):
         for ax, model_type in zip(axes, self.keys()):
             features, labels = self._load_reduction(model_type)
             downstream.plot_reduction(ax, features, labels, model_type)
-        plt.savefig(self._get_output_path())
-        plt.close()
 
     def _load_reduction(self, model_type):
         file_path = self[model_type]['reduction']
@@ -242,6 +246,13 @@ class LatentDownstream(ResultsMixin):
         labels = data['arr_1']
 
         return features, labels
+
+    def _make_legend(self, fig, axes):
+        handels, labels = axes[0].get_legend_handles_labels()
+        legend = fig.legend(handels, labels)
+        for handle in legend.legendHandles:
+            handle._sizes = [20]
+            handle._alpha = 1
 
     def _get_output_path(self):
         log_path = self._get_log_path()
