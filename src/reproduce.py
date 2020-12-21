@@ -25,7 +25,7 @@ class ReproductionRun:
             self.checkpoints.save()
         for model_type in self.checkpoints.keys():
             print(f'Perform downstream tasks for {model_type}...')
-        #    self.perform_downstream(model_type)
+            self.perform_downstream(model_type)
         self.render_results()
 
     def train_all(self):
@@ -146,6 +146,7 @@ class AnomalyDownstream(ResultsMixin):
         return fpr, tpr, thresholds, auc
 
     def render(self):
+        print('Render anomaly detection results...')
         num_subplots = len(self.keys())
         fig, axes = utils.get_axes_grid(num_subplots, ncols=4, ax_size=4)
         self._plot_rocs(axes)
@@ -227,6 +228,7 @@ class LatentDownstream(ResultsMixin):
         return batch
 
     def render(self):
+        print('Render reduction results...')
         num_subplots = len(self.keys())
         fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=6)
         self._plot_reductions(axes)
