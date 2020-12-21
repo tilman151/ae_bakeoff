@@ -1,5 +1,6 @@
 import os
 
+import matplotlib.pyplot as plt
 import pytablewriter
 import pytorch_lightning as pl
 
@@ -24,9 +25,7 @@ class ReproductionRun:
         for model_type in self.checkpoints.keys():
             print(f'Perform downstream tasks for {model_type}...')
         #    self.perform_downstream(model_type)
-        self.classification_results.render()
-        # self.render_roc_plot()
-        # self.render_reduction_plot()
+        self.render_results()
 
     def train_all(self):
         for model_type in run.AUTOENCODERS:
@@ -60,8 +59,19 @@ class ReproductionRun:
         self.latent_results.add_interpolation_for(model_type, checkpoint_path)
         self.latent_results.add_reduction_for(model_type, checkpoint_path)
 
+    def render_results(self):
+        self.classification_results.render()
+        self.anomaly_detection_results.render()
+        self.latent_results.render()
+
 
 class Checkpoints(ResultsMixin):
+    def _get_output_path(self):
+        pass
+
+    def render(self):
+        pass
+
     def _get_results_path(self):
         log_path = self._get_log_path()
         checkpoint_path = os.path.join(log_path, 'checkpoints.json')
@@ -133,6 +143,47 @@ class AnomalyDownstream(ResultsMixin):
         fpr, tpr, thresholds, auc = anomaly_detector.get_test_roc(data)
 
         return fpr, tpr, thresholds, auc
+
+    def render(self):
+        axes = self._get_axes()
+        self._plot_rocs(axes)
+        self._deactivate_unused_axes(axes)
+        plt.savefig(self._get_output_path())
+        plt.close()
+
+    def _get_axes(self):
+        num_subplots = len(self.keys())
+        ncols = 4
+        nrows = num_subplots // num_subplots
+        nrows += 1 if nrows * ncols < num_subplots else 0
+        figsize = (4 * ncols, 4 * nrows)
+        fig, axes = plt.subplots(nrows, ncols,
+                                 sharey='all',
+                                 sharex='all',
+                                 figsize=figsize)
+        axes = axes.ravel()
+
+        return axes
+
+    def _plot_rocs(self, axes):
+        for ax, model_type in zip(axes, self.keys()):
+            downstream.plot_roc(ax,
+                                self[model_type]['fpr'],
+                                self[model_type]['tpr'],
+                                self[model_type]['auc'],
+                                title=model_type)
+
+    def _deactivate_unused_axes(self, axes):
+        num_used_axes = len(self.keys())
+        unused_axes = axes[num_used_axes:]
+        for unused_ax in unused_axes:
+            unused_ax.set_axis_off()
+
+    def _get_output_path(self):
+        log_path = self._get_log_path()
+        output_path = os.path.join(log_path, 'anomaly.png')
+
+        return output_path
 
     def _get_results_path(self):
         log_path = self._get_log_path()
