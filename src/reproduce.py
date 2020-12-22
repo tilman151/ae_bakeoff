@@ -21,6 +21,7 @@ class ReproductionRun:
         self.classification_results = ClassificationDownstream(load_downstream_results)
         self.anomaly_detection_results = AnomalyDownstream(load_downstream_results)
         self.latent_results = LatentDownstream(load_downstream_results)
+        self.reconstruction_results = ReconstructionResults(load_downstream_results)
 
     def reproduce(self):
         if self.checkpoints.empty():
@@ -41,6 +42,7 @@ class ReproductionRun:
         self.perform_classification(model_type)
         self.perform_anomaly_detection(model_type)
         self.perform_latent_tasks(model_type)
+        self.perform_reconstruction(model_type)
 
     def perform_classification(self, model_type):
         print('Classification...')
@@ -67,14 +69,21 @@ class ReproductionRun:
 
     def _perform_all_latent(self, model_type, checkpoint_path):
         self.latent_results.add_samples_for(model_type, checkpoint_path)
-        self.latent_results.add_reconstructions_for(model_type, checkpoint_path)
         self.latent_results.add_interpolation_for(model_type, checkpoint_path)
         self.latent_results.add_reduction_for(model_type, checkpoint_path)
+
+    def perform_reconstruction(self,model_type):
+        print('Reconstruction...')
+        if model_type not in self.reconstruction_results:
+            pl.seed_everything(42)
+            checkpoint_path = self.checkpoints[model_type]['general']
+            self.reconstruction_results.add_reconstructions_for(model_type, checkpoint_path)
 
     def render_results(self):
         self.classification_results.render()
         self.anomaly_detection_results.render()
         self.latent_results.render()
+        self.reconstruction_results.render()
 
 
 class Checkpoints(ResultsMixin):
@@ -196,16 +205,6 @@ class LatentDownstream(ResultsMixin):
     def _save_samples(self, model_type, samples):
         self.save_image_result(model_type, 'samples', samples)
 
-    def add_reconstructions_for(self, model_type, checkpoint_path):
-        data = self._get_datamodule()
-        latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
-        loss, reconstructions = latent_sampler.reconstruct(data, num_comparison=16)
-        self._save_reconstructions(model_type, loss, reconstructions)
-
-    def _save_reconstructions(self, model_type, loss, reconstructions):
-        self.safe_add(model_type, 'recon_loss', loss)
-        self.save_image_result(model_type, 'reconstructions', reconstructions)
-
     def add_interpolation_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
@@ -237,12 +236,10 @@ class LatentDownstream(ResultsMixin):
         data = building.build_datamodule()
         data.prepare_data()
         data.setup('test')
+
         return data
 
     def render(self):
-        self._render_reductions()
-
-    def _render_reductions(self):
         print('Render reduction results...')
         num_subplots = len(self.keys())
         fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=6)
@@ -280,6 +277,46 @@ class LatentDownstream(ResultsMixin):
     def _get_results_path(self):
         log_path = self._get_log_path()
         results_path = os.path.join(log_path, 'latent_results.json')
+
+        return results_path
+
+
+class ReconstructionResults(ResultsMixin):
+    def add_reconstructions_for(self, model_type, checkpoint_path):
+        data = self._get_datamodule()
+        latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
+        loss, reconstructions = latent_sampler.reconstruct(data, num_comparison=16)
+        self._save_reconstructions(model_type, loss, reconstructions)
+
+    def _get_datamodule(self):
+        data = building.build_datamodule()
+        data.prepare_data()
+        data.setup('test')
+
+        return data
+
+    def _save_reconstructions(self, model_type, loss, reconstructions):
+        self.safe_add(model_type, 'loss', loss)
+        self.save_image_result(model_type, 'reconstructions', reconstructions)
+
+    def render(self):
+        print('Render reconstruction table...')
+        values = [v['loss'] for v in self.values()]
+        markdown_table = pytablewriter.MarkdownTableWriter(table_name='Reconstruction Results',
+                                                           headers=list(self.keys()),
+                                                           value_matrix=[values])
+        markdown_file = self._get_output_path()
+        markdown_table.dump(markdown_file)
+
+    def _get_output_path(self):
+        log_path = self._get_log_path()
+        output_path = os.path.join(log_path, 'reconstruction.md')
+
+        return output_path
+
+    def _get_results_path(self):
+        log_path = self._get_log_path()
+        results_path = os.path.join(log_path, 'reconstruction_results.json')
 
         return results_path
 
