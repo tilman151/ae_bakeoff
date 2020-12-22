@@ -15,7 +15,7 @@ from downstream.results import ResultsMixin
 class ReproductionRun:
     def __init__(self, retrain, recalc_downstream):
         load_checkpoints = not retrain
-        load_downstream_results = not recalc_downstream
+        load_downstream_results = (not recalc_downstream) and load_checkpoints
 
         self.checkpoints = Checkpoints(load_checkpoints)
         self.classification_results = ClassificationDownstream(load_downstream_results)
