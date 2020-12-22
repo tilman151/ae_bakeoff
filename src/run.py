@@ -37,14 +37,23 @@ def _train(model_type, ae, datamodule, logger):
 
 
 def _train_stacked(ae, datamodule, logger, epochs):
-    num_stacking = ae.encoder.num_layers
-    trainer = pl.Trainer(max_epochs=epochs // num_stacking, deterministic=True, logger=logger)
-    for i in range(num_stacking):
+    epochs_per_layer = _get_epochs_per_layer(epochs, ae.encoder.num_layers)
+    trainer = pl.Trainer(max_epochs=0, deterministic=True, logger=logger)
+    for additional_epochs in epochs_per_layer:
+        trainer.max_epochs += additional_epochs
         trainer.fit(ae, datamodule=datamodule)
+        trainer.current_epoch += 1
         ae.encoder.stack_layer()
         ae.decoder.stack_layer()
 
     return trainer
+
+
+def _get_epochs_per_layer(epochs, num_layers):
+    epochs_per_layer = num_layers * [epochs // num_layers]
+    epochs_per_layer[-1] += epochs % num_layers
+
+    return epochs_per_layer
 
 
 def _train_normal(ae, datamodule, logger, epochs):
