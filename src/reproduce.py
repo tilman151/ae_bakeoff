@@ -55,6 +55,12 @@ class ReproductionRun:
         print('Latent Space Visualization...')
         pl.seed_everything(42)
         checkpoint_path = self.checkpoints[model_type]['general']
+        self._perform_all_latent(model_type, checkpoint_path)
+
+        checkpoint_path = self.checkpoints[model_type]['anomaly']
+        self.latent_results.add_reduction_for(model_type, checkpoint_path, task='anomaly')
+
+    def _perform_all_latent(self, model_type, checkpoint_path):
         self.latent_results.add_samples_for(model_type, checkpoint_path)
         self.latent_results.add_reconstructions_for(model_type, checkpoint_path)
         self.latent_results.add_interpolation_for(model_type, checkpoint_path)
@@ -205,14 +211,15 @@ class LatentDownstream(ResultsMixin):
     def _save_interpolation(self, model_type, interpolation):
         self.save_video_result(model_type, 'interpolation', interpolation)
 
-    def add_reduction_for(self, model_type, checkpoint_path):
+    def add_reduction_for(self, model_type, checkpoint_path, task=None):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
         reduction, labels = latent_sampler.reduce(data.test_dataloader())
-        self._save_reduction(model_type, reduction, labels)
+        self._save_reduction(model_type, reduction, labels, task)
 
-    def _save_reduction(self, model_type, reduction, labels):
-        self.save_array_result(model_type, 'reduction', reduction, labels)
+    def _save_reduction(self, model_type, reduction, labels, task):
+        tag = 'reduction' if task is None else f'reduction_{task}'
+        self.save_array_result(model_type, tag, reduction, labels)
 
     def _get_datamodule(self):
         data = building.build_datamodule()
