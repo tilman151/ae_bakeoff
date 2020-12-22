@@ -19,6 +19,9 @@ class ResultsMixin:
     def __setitem__(self, key, value):
         self.results[key] = value
 
+    def __contains__(self, item):
+        return item in self.results.keys()
+
     def save_image_result(self, model_type, tag, image):
         image_path = self._get_image_path(model_type, tag)
         save_imagegrid(image, image_path)

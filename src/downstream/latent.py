@@ -22,7 +22,6 @@ class Latent:
 
         return samples
 
-    @torch.no_grad()
     def reconstruct(self, datamodule, num_comparison):
         recon_loss = self._get_reconstruction_loss(datamodule)
         comparison = self._build_reconstruction_comparison(datamodule, num_comparison)
@@ -36,6 +35,7 @@ class Latent:
 
         return recon_loss
 
+    @torch.no_grad()
     def _build_reconstruction_comparison(self, datamodule, n):
         batch = self._get_comparison_batch(datamodule, n)
         reconstruction = self.autoencoder(batch)

@@ -45,7 +45,7 @@ class Autoencoder(pl.LightningModule):
 
     def _evaluate(self, inputs, batch_idx, mode):
         inputs, _, = inputs
-        if batch_idx == 0:
+        if mode == 'val' and batch_idx == 0:
             self._log_generate_images(inputs, mode)
 
         loss, bottleneck_loss, recon_loss = self._get_losses(inputs)

@@ -62,9 +62,8 @@ class ReproductionRun:
             pl.seed_everything(42)
             checkpoint_path = self.checkpoints[model_type]['general']
             self._perform_all_latent(model_type, checkpoint_path)
-
-        checkpoint_path = self.checkpoints[model_type]['anomaly']
-        self.latent_results.add_reduction_for(model_type, checkpoint_path, task='anomaly')
+            checkpoint_path = self.checkpoints[model_type]['anomaly']
+            self.latent_results.add_reduction_for(model_type, checkpoint_path, task='anomaly')
 
     def _perform_all_latent(self, model_type, checkpoint_path):
         self.latent_results.add_samples_for(model_type, checkpoint_path)
@@ -210,9 +209,16 @@ class LatentDownstream(ResultsMixin):
     def add_interpolation_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
-        start, end = self._get_data_batch(data, n=2)
+        start, end = self._get_start_end_frames(data)
         interpolation = latent_sampler.interpolate(start, end, steps=128)
         self._save_interpolation(model_type, interpolation)
+
+    def _get_start_end_frames(self, data):
+        test_loader = data.test_dataloader()
+        batch, _ = next(iter(test_loader))
+        start, end = batch[:2]
+
+        return start, end
 
     def _save_interpolation(self, model_type, interpolation):
         self.save_video_result(model_type, 'interpolation', interpolation)
