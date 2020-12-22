@@ -1,3 +1,4 @@
+import pytorch_lightning as pl
 import torch
 import torchvision
 import umap
@@ -22,8 +23,34 @@ class Latent:
         return samples
 
     @torch.no_grad()
-    def reconstruct(self, batch):
+    def reconstruct(self, datamodule, num_comparison):
+        recon_loss = self._get_reconstruction_loss(datamodule)
+        comparison = self._build_reconstruction_comparison(datamodule, num_comparison)
+
+        return recon_loss, comparison
+
+    def _get_reconstruction_loss(self, datamodule):
+        trainer = pl.Trainer(logger=False, deterministic=True)
+        test_results, *_ = trainer.test(self.autoencoder, datamodule=datamodule)
+        recon_loss = test_results['test/recon']
+
+        return recon_loss
+
+    def _build_reconstruction_comparison(self, datamodule, n):
+        batch = self._get_comparison_batch(datamodule, n)
         reconstruction = self.autoencoder(batch)
+        comparison = self._build_comparison_grid(batch, reconstruction)
+
+        return comparison
+
+    def _get_comparison_batch(self, data, n):
+        test_loader = data.test_dataloader()
+        batch, _ = next(iter(test_loader))
+        batch = batch[:n]
+
+        return batch
+
+    def _build_comparison_grid(self, batch, reconstruction):
         comparison = [tensor for sublist in zip(batch, reconstruction) for tensor in sublist]
         comparison = torchvision.utils.make_grid(comparison, nrow=2)
         comparison = comparison.numpy()

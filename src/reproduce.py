@@ -194,11 +194,11 @@ class LatentDownstream(ResultsMixin):
     def add_reconstructions_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
-        batch = self._get_data_batch(data, n=16)
-        reconstructions = latent_sampler.reconstruct(batch)
-        self._save_reconstructions(model_type, reconstructions)
+        loss, reconstructions = latent_sampler.reconstruct(data, num_comparison=16)
+        self._save_reconstructions(model_type, loss, reconstructions)
 
-    def _save_reconstructions(self, model_type, reconstructions):
+    def _save_reconstructions(self, model_type, loss, reconstructions):
+        self.safe_add(model_type, 'recon_loss', loss)
         self.save_image_result(model_type, 'reconstructions', reconstructions)
 
     def add_interpolation_for(self, model_type, checkpoint_path):
@@ -226,13 +226,6 @@ class LatentDownstream(ResultsMixin):
         data.prepare_data()
         data.setup('test')
         return data
-
-    def _get_data_batch(self, data, n):
-        test_loader = data.test_dataloader()
-        batch, _ = next(iter(test_loader))
-        batch = batch[:n]
-
-        return batch
 
     def render(self):
         print('Render reduction results...')
