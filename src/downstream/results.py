@@ -7,8 +7,8 @@ from downstream import save_imagegrid, save_oscillating_video
 
 
 class ResultsMixin:
-    def __init__(self):
-        if self._results_exist():
+    def __init__(self, load_from_disk=True):
+        if load_from_disk and self._results_exist():
             self.results = self._load_results()
         else:
             self.results = {}
@@ -102,7 +102,8 @@ class ResultsMixin:
     def _get_results_path(self):
         raise NotImplementedError
 
-    def _get_log_path(self):
+    @staticmethod
+    def _get_log_path():
         script_path = os.path.dirname(__file__)
         log_path = os.path.join(script_path, '..', '..', 'logs')
         log_path = os.path.normpath(log_path)

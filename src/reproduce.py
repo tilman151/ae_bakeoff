@@ -13,11 +13,14 @@ from downstream.results import ResultsMixin
 
 
 class ReproductionRun:
-    def __init__(self):
-        self.checkpoints = Checkpoints()
-        self.classification_results = ClassificationDownstream()
-        self.anomaly_detection_results = AnomalyDownstream()
-        self.latent_results = LatentDownstream()
+    def __init__(self, retrain, recalc_downstream):
+        load_checkpoints = not retrain
+        load_downstream_results = not recalc_downstream
+
+        self.checkpoints = Checkpoints(load_checkpoints)
+        self.classification_results = ClassificationDownstream(load_downstream_results)
+        self.anomaly_detection_results = AnomalyDownstream(load_downstream_results)
+        self.latent_results = LatentDownstream(load_downstream_results)
 
     def reproduce(self):
         if self.checkpoints.empty():
@@ -41,21 +44,24 @@ class ReproductionRun:
 
     def perform_classification(self, model_type):
         print('Classification...')
-        pl.seed_everything(42)
-        checkpoint_path = self.checkpoints[model_type]['general']
-        self.classification_results.add_accuracy_for(model_type, checkpoint_path)
+        if model_type not in self.classification_results:
+            pl.seed_everything(42)
+            checkpoint_path = self.checkpoints[model_type]['general']
+            self.classification_results.add_accuracy_for(model_type, checkpoint_path)
 
     def perform_anomaly_detection(self, model_type):
         print('Anomaly Detection...')
-        pl.seed_everything(42)
-        checkpoint_path = self.checkpoints[model_type]['anomaly']
-        self.anomaly_detection_results.add_roc_for(model_type, checkpoint_path)
+        if model_type not in self.anomaly_detection_results:
+            pl.seed_everything(42)
+            checkpoint_path = self.checkpoints[model_type]['anomaly']
+            self.anomaly_detection_results.add_roc_for(model_type, checkpoint_path)
 
     def perform_latent_tasks(self, model_type):
         print('Latent Space Visualization...')
-        pl.seed_everything(42)
-        checkpoint_path = self.checkpoints[model_type]['general']
-        self._perform_all_latent(model_type, checkpoint_path)
+        if model_type not in self.latent_results:
+            pl.seed_everything(42)
+            checkpoint_path = self.checkpoints[model_type]['general']
+            self._perform_all_latent(model_type, checkpoint_path)
 
         checkpoint_path = self.checkpoints[model_type]['anomaly']
         self.latent_results.add_reduction_for(model_type, checkpoint_path, task='anomaly')
@@ -228,6 +234,9 @@ class LatentDownstream(ResultsMixin):
         return data
 
     def render(self):
+        self._render_reductions()
+
+    def _render_reductions(self):
         print('Render reduction results...')
         num_subplots = len(self.keys())
         fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=6)
@@ -270,4 +279,10 @@ class LatentDownstream(ResultsMixin):
 
 
 if __name__ == '__main__':
-    ReproductionRun().reproduce()
+    import argparse
+    parser = argparse.ArgumentParser(description='Reproduce all results')
+    parser.add_argument('--retrain', action='store_true', help='Retrain even if checkpoints are available')
+    parser.add_argument('--recalc_downstream', action='store_true', help='Recalculate downstream tasks')
+    opt = parser.parse_args()
+
+    ReproductionRun(opt.retrain, opt.recalc_downstream).reproduce()
