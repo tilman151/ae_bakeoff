@@ -44,7 +44,7 @@ def get_axes_grid(num_subplots, ncols, ax_size):
 
 
 def _get_grid(num_subplots, ncols, ax_size):
-    nrows = num_subplots // num_subplots
+    nrows = num_subplots // ncols
     nrows += 1 if nrows * ncols < num_subplots else 0
     figsize = (ax_size * ncols, ax_size * nrows)
     fig, axes = plt.subplots(nrows, ncols,
