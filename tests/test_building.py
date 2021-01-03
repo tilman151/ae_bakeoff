@@ -19,10 +19,12 @@ class TestBuildingDataModule(unittest.TestCase):
             dm = building.build_datamodule()
             self.assertIsNone(dm.exclude)
             self.assertIsNone(dm.train_size)
+            self.assertEqual(32, dm.batch_size)
         with self.subTest(case='anomaly'):
             dm = building.build_datamodule(anomaly=True)
             self.assertEqual(9, dm.exclude)
             self.assertIsNone(dm.train_size)
+            self.assertEqual(32, dm.batch_size)
 
     def test_rest(self):
         rest = ['shallow',

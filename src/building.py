@@ -8,10 +8,11 @@ import lightning
 from models import encoders, decoders, bottlenecks
 
 
-def build_datamodule(model_type=None, anomaly=False):
+def build_datamodule(model_type=None, batch_size=32, anomaly=False):
     exclude = 9 if anomaly else None
     train_size = 550 if model_type == 'classification' else None
     datamodule = data.MNISTDataModule('../data',
+                                      batch_size=batch_size,
                                       train_size=train_size,
                                       exclude=exclude)
 

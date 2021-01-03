@@ -17,7 +17,7 @@ def run(model_type, anomaly=False):
     assert model_type in AUTOENCODERS
     task = 'anomaly' if anomaly else None
     pl.seed_everything(42)
-    datamodule = build_datamodule(model_type, anomaly)
+    datamodule = build_datamodule(model_type, anomaly=anomaly)
     ae = build_ae(model_type, datamodule.dims)
     logger = build_logger(model_type, task)
     checkpoint_path = _train(model_type, ae, datamodule, logger)
