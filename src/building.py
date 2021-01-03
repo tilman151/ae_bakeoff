@@ -19,7 +19,7 @@ def build_datamodule(model_type=None, anomaly=False):
 
 
 def build_ae(model_type, input_shape):
-    latent_dim = 32
+    latent_dim = 20
     noise_ratio = 0.5 if model_type == 'denoising' else None
     encoder, decoder = _build_networks(model_type, input_shape, latent_dim)
     bottleneck = _build_bottleneck(model_type, latent_dim)
@@ -57,7 +57,7 @@ def _build_bottleneck(model_type, latent_dim):
     elif model_type == 'beta_vae_loose':
         bottleneck = bottlenecks.VariationalBottleneck(latent_dim, beta=0.5)
     elif model_type == 'sparse':
-        bottleneck = bottlenecks.SparseBottleneck(latent_dim, sparsity=0.1)
+        bottleneck = bottlenecks.SparseBottleneck(latent_dim, sparsity=0.5)
     elif model_type == 'vq':
         bottleneck = bottlenecks.VectorQuantizedBottleneck(latent_dim, num_categories=512)
     else:
