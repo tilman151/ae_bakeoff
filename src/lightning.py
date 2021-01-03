@@ -65,7 +65,7 @@ class Autoencoder(pl.LightningModule):
         latent_code, bottleneck_loss = self.bottleneck(encoded)
         decoded = self.decoder(latent_code)
 
-        recon_loss = self.criterion_recon(decoded, inputs).mean(0).sum()  # batch mean of L2 norm
+        recon_loss = self.criterion_recon(decoded, inputs).mean(0).sum()  # batch mean of binary cross entropy
         loss = recon_loss + bottleneck_loss
 
         return loss, bottleneck_loss, recon_loss
