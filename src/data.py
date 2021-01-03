@@ -1,4 +1,5 @@
 """Adopted from https://pytorch-lightning.readthedocs.io/en/stable/datamodules.html#lightningdatamodule-api"""
+import os
 
 import pytorch_lightning as pl
 import torch
@@ -19,6 +20,7 @@ class MNISTDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.train_size = train_size
         self.exclude = exclude
+        self.num_workers = os.cpu_count()
 
         self.mnist_train = None
         self.mnist_val = None
@@ -50,10 +52,10 @@ class MNISTDataModule(pl.LightningDataModule):
         return mnist_train, mnist_val
 
     def train_dataloader(self):
-        return DataLoader(self.mnist_train, batch_size=self.batch_size, shuffle=True, num_workers=0)
+        return DataLoader(self.mnist_train, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers)
 
     def val_dataloader(self):
-        return DataLoader(self.mnist_val, batch_size=self.batch_size, num_workers=0)
+        return DataLoader(self.mnist_val, batch_size=self.batch_size, num_workers=self.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=0)
+        return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=self.num_workers)
