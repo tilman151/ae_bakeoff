@@ -13,9 +13,12 @@ from downstream.results import ResultsMixin
 
 
 class ReproductionRun:
-    def __init__(self, retrain, recalc_downstream):
+    def __init__(self, retrain, recalc_downstream, batch_size, gpu):
         load_checkpoints = not retrain
         load_downstream_results = (not recalc_downstream) and load_checkpoints
+
+        self.batch_size = batch_size
+        self.gpu = gpu
 
         self.checkpoints = Checkpoints(load_checkpoints)
         self.classification_results = ClassificationDownstream(load_downstream_results)
@@ -35,8 +38,8 @@ class ReproductionRun:
     def train_all(self):
         for model_type in run.AUTOENCODERS:
             self.checkpoints[model_type] = {}
-            self.checkpoints[model_type]['general'] = run.run(model_type)
-            self.checkpoints[model_type]['anomaly'] = run.run(model_type, anomaly=True)
+            self.checkpoints[model_type]['general'] = run.run(model_type, self.batch_size, self.gpu)
+            self.checkpoints[model_type]['anomaly'] = run.run(model_type, self.batch_size, self.gpu, anomaly=True)
 
     def perform_downstream(self, model_type):
         self.perform_classification(model_type)
@@ -326,6 +329,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Reproduce all results')
     parser.add_argument('--retrain', action='store_true', help='Retrain even if checkpoints are available')
     parser.add_argument('--recalc_downstream', action='store_true', help='Recalculate downstream tasks')
+    parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
+    parser.add_argument('--gpu', action='store_true', help='use GPU for training')
     opt = parser.parse_args()
 
-    ReproductionRun(opt.retrain, opt.recalc_downstream).reproduce()
+    ReproductionRun(opt.retrain, opt.recalc_downstream, opt.batch_size, opt.gpu).reproduce()

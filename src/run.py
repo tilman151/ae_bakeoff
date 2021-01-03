@@ -13,32 +13,33 @@ AUTOENCODERS = ['shallow',
                 'vq']
 
 
-def run(model_type, anomaly=False):
+def run(model_type, batch_size, gpu, anomaly=False):
     assert model_type in AUTOENCODERS
     task = 'anomaly' if anomaly else None
     pl.seed_everything(42)
-    datamodule = build_datamodule(model_type, anomaly=anomaly)
+    datamodule = build_datamodule(model_type, batch_size, anomaly)
     ae = build_ae(model_type, datamodule.dims)
     logger = build_logger(model_type, task)
-    checkpoint_path = _train(model_type, ae, datamodule, logger)
+    checkpoint_path = _train(model_type, ae, datamodule, logger, gpu)
 
     return checkpoint_path
 
 
-def _train(model_type, ae, datamodule, logger):
+def _train(model_type, ae, datamodule, logger, gpu):
     epochs = 60
+    gpus = [0] if gpu else None
     if model_type == 'stacked':
-        trainer = _train_stacked(ae, datamodule, logger, epochs)
+        trainer = _train_stacked(ae, datamodule, logger, epochs, gpus)
     else:
-        trainer = _train_normal(ae, datamodule, logger, epochs)
+        trainer = _train_normal(ae, datamodule, logger, epochs, gpus)
     checkpoint_path = trainer.checkpoint_callback.last_model_path
 
     return checkpoint_path
 
 
-def _train_stacked(ae, datamodule, logger, epochs):
+def _train_stacked(ae, datamodule, logger, epochs, gpus):
     epochs_per_layer = _get_epochs_per_layer(epochs, ae.encoder.num_layers)
-    trainer = pl.Trainer(max_epochs=0, deterministic=True, logger=logger)
+    trainer = pl.Trainer(max_epochs=0, deterministic=True, logger=logger, gpus=gpus)
     for additional_epochs in epochs_per_layer:
         trainer.max_epochs += additional_epochs
         trainer.fit(ae, datamodule=datamodule)
@@ -56,8 +57,8 @@ def _get_epochs_per_layer(epochs, num_layers):
     return epochs_per_layer
 
 
-def _train_normal(ae, datamodule, logger, epochs):
-    trainer = pl.Trainer(max_epochs=epochs, deterministic=True, logger=logger)
+def _train_normal(ae, datamodule, logger, epochs, gpus):
+    trainer = pl.Trainer(max_epochs=epochs, deterministic=True, logger=logger, gpus=gpus)
     trainer.fit(ae, datamodule=datamodule)
 
     return trainer
@@ -67,7 +68,9 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run unsupervised autoencoder training.')
     parser.add_argument('model_type', choices=AUTOENCODERS)
+    parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
+    parser.add_argument('--gpu', action='store_true', help='use GPU for training')
     parser.add_argument('--anomaly', action='store_true', help='train for anomaly detection')
     opt = parser.parse_args()
 
-    print(run(opt.model_type, opt.anomaly))
+    print(run(opt.model_type, opt.batch_size, opt.gpu, opt.anomaly))
