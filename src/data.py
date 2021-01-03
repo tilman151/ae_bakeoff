@@ -8,7 +8,7 @@ from torchvision.datasets import MNIST
 
 
 class MNISTDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir: str = './', train_size=None, exclude=None):
+    def __init__(self, data_dir: str = './', batch_size=32, train_size=None, exclude=None):
         super().__init__()
         self.data_dir = data_dir
         self.transform = transforms.Compose([transforms.Pad(2),
@@ -16,6 +16,7 @@ class MNISTDataModule(pl.LightningDataModule):
 
         self.dims = (1, 32, 32)
         self.num_classes = 10 if exclude is None else 9
+        self.batch_size = batch_size
         self.train_size = train_size
         self.exclude = exclude
 
@@ -49,10 +50,10 @@ class MNISTDataModule(pl.LightningDataModule):
         return mnist_train, mnist_val
 
     def train_dataloader(self):
-        return DataLoader(self.mnist_train, batch_size=32, num_workers=0)
+        return DataLoader(self.mnist_train, batch_size=self.batch_size, num_workers=0)
 
     def val_dataloader(self):
-        return DataLoader(self.mnist_val, batch_size=32, num_workers=0)
+        return DataLoader(self.mnist_val, batch_size=self.batch_size, num_workers=0)
 
     def test_dataloader(self):
-        return DataLoader(self.mnist_test, batch_size=32, num_workers=0)
+        return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=0)
