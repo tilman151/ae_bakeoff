@@ -50,7 +50,7 @@ class MNISTDataModule(pl.LightningDataModule):
         return mnist_train, mnist_val
 
     def train_dataloader(self):
-        return DataLoader(self.mnist_train, batch_size=self.batch_size, num_workers=0)
+        return DataLoader(self.mnist_train, batch_size=self.batch_size, shuffle=True, num_workers=0)
 
     def val_dataloader(self):
         return DataLoader(self.mnist_val, batch_size=self.batch_size, num_workers=0)
