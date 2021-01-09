@@ -127,7 +127,8 @@ class ClassificationDownstream(ResultsMixin):
         trainer = pl.Trainer(logger=False,
                              max_epochs=20,
                              checkpoint_callback=checkpoint_callback,
-                             early_stop_callback=early_stop_callback)
+                             early_stop_callback=early_stop_callback,
+                             progress_bar_refresh_rate=0)
 
         return trainer
 
