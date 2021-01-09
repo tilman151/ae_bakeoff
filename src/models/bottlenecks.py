@@ -89,7 +89,7 @@ class VectorQuantizedBottleneck(Bottleneck):
         self.num_categories = num_categories
         self.beta = beta
 
-        self.embeddings = self._build_embeddings()
+        self.register_parameter('embeddings', self._build_embeddings())
         self.sum_squared_error = nn.MSELoss(reduction='none')
         self._straight_through_estimation = StraightThroughEstimator.apply
 
@@ -129,7 +129,7 @@ class VectorQuantizedBottleneck(Bottleneck):
         return samples
 
     def _take_from_embedding(self, idx):
-        offsets = torch.arange(0, self.latent_dim) * self.num_categories
+        offsets = torch.arange(0, self.latent_dim, device=idx.device) * self.num_categories
         dist_idx_flat = idx + offsets.repeat(idx.shape[0], 1)
         latent_code = torch.take(self.embeddings.squeeze(0), dist_idx_flat)
 
