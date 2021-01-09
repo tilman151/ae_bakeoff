@@ -99,12 +99,6 @@ class ResultsMixin:
     def render(self):
         raise NotImplementedError
 
-    def _get_output_path(self):
-        raise NotImplementedError
-
-    def _get_results_path(self):
-        raise NotImplementedError
-
     @staticmethod
     def _get_log_path():
         script_path = os.path.dirname(__file__)

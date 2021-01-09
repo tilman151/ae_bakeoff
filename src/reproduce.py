@@ -24,6 +24,7 @@ class ReproductionRun:
         self.classification_results = ClassificationDownstream(load_downstream_results)
         self.anomaly_detection_results = AnomalyDownstream(load_downstream_results)
         self.latent_results = LatentDownstream(load_downstream_results)
+        self.latent_anomaly_results = LatentDownstream(load_downstream_results, tag='anomaly')
         self.reconstruction_results = ReconstructionResults(load_downstream_results)
 
     def reproduce(self):
@@ -68,14 +69,14 @@ class ReproductionRun:
             checkpoint_path = self.checkpoints[model_type]['general']
             self._perform_all_latent(model_type, checkpoint_path)
             checkpoint_path = self.checkpoints[model_type]['anomaly']
-            self.latent_results.add_reduction_for(model_type, checkpoint_path, task='anomaly')
+            self.latent_anomaly_results.add_reduction_for(model_type, checkpoint_path)
 
     def _perform_all_latent(self, model_type, checkpoint_path):
         self.latent_results.add_samples_for(model_type, checkpoint_path)
         self.latent_results.add_interpolation_for(model_type, checkpoint_path)
         self.latent_results.add_reduction_for(model_type, checkpoint_path)
 
-    def perform_reconstruction(self,model_type):
+    def perform_reconstruction(self, model_type):
         print('Reconstruction...')
         if model_type not in self.reconstruction_results:
             pl.seed_everything(42)
@@ -86,6 +87,7 @@ class ReproductionRun:
         self.classification_results.render()
         self.anomaly_detection_results.render()
         self.latent_results.render()
+        self.latent_anomaly_results.render()
         self.reconstruction_results.render()
 
 
@@ -199,6 +201,11 @@ class AnomalyDownstream(ResultsMixin):
 
 
 class LatentDownstream(ResultsMixin):
+    def __init__(self, load_from_disk=True, tag=None):
+        self.tag = tag
+
+        super(LatentDownstream, self).__init__(load_from_disk)
+
     def add_samples_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
@@ -207,7 +214,7 @@ class LatentDownstream(ResultsMixin):
             self._save_samples(model_type, samples)
 
     def _save_samples(self, model_type, samples):
-        self.save_image_result(model_type, 'samples', samples)
+        self.save_image_result(model_type, f'samples{self._get_tag_suffix()}', samples)
 
     def add_interpolation_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
@@ -224,17 +231,16 @@ class LatentDownstream(ResultsMixin):
         return start, end
 
     def _save_interpolation(self, model_type, interpolation):
-        self.save_video_result(model_type, 'interpolation', interpolation)
+        self.save_video_result(model_type, f'interpolation{self._get_tag_suffix()}', interpolation)
 
-    def add_reduction_for(self, model_type, checkpoint_path, task=None):
+    def add_reduction_for(self, model_type, checkpoint_path):
         data = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data, checkpoint_path)
         reduction, labels = latent_sampler.reduce(data.test_dataloader())
-        self._save_reduction(model_type, reduction, labels, task)
+        self._save_reduction(model_type, reduction, labels)
 
-    def _save_reduction(self, model_type, reduction, labels, task):
-        tag = 'reduction' if task is None else f'reduction_{task}'
-        self.save_array_result(model_type, tag, reduction, labels)
+    def _save_reduction(self, model_type, reduction, labels):
+        self.save_array_result(model_type, f'reduction{self._get_tag_suffix()}', reduction, labels)
 
     def _get_datamodule(self):
         data = building.build_datamodule()
@@ -244,7 +250,7 @@ class LatentDownstream(ResultsMixin):
         return data
 
     def render(self):
-        print('Render reduction results...')
+        print(f'Render reduction{self._get_tag_suffix()} results...')
         num_subplots = len(self.keys())
         fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=6)
         self._plot_reductions(axes)
@@ -258,7 +264,7 @@ class LatentDownstream(ResultsMixin):
             downstream.plot_reduction(ax, features, labels, model_type)
 
     def _load_reduction(self, model_type):
-        file_path = self[model_type]['reduction']
+        file_path = self[model_type][f'reduction{self._get_tag_suffix()}']
         data = np.load(file_path)
         features = data['arr_0']
         labels = data['arr_1']
@@ -274,15 +280,18 @@ class LatentDownstream(ResultsMixin):
 
     def _get_output_path(self):
         log_path = self._get_log_path()
-        output_path = os.path.join(log_path, 'reduction.png')
+        output_path = os.path.join(log_path, f'reduction{self._get_tag_suffix()}.png')
 
         return output_path
 
     def _get_results_path(self):
         log_path = self._get_log_path()
-        results_path = os.path.join(log_path, 'latent_results.json')
+        results_path = os.path.join(log_path, f'latent_results{self._get_tag_suffix()}.json')
 
         return results_path
+
+    def _get_tag_suffix(self):
+        return '' if self.tag is None else f'_{self.tag}'
 
 
 class ReconstructionResults(ResultsMixin):
