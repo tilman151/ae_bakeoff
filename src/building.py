@@ -58,7 +58,7 @@ def _build_bottleneck(model_type, latent_dim):
     elif model_type == 'beta_vae_loose':
         bottleneck = bottlenecks.VariationalBottleneck(latent_dim, beta=0.5)
     elif model_type == 'sparse':
-        bottleneck = bottlenecks.SparseBottleneck(latent_dim, sparsity=0.5)
+        bottleneck = bottlenecks.SparseBottleneck(latent_dim, sparsity=0.25)
     elif model_type == 'vq':
         bottleneck = bottlenecks.VectorQuantizedBottleneck(latent_dim, num_categories=512)
     else:
