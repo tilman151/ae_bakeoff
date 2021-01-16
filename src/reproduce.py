@@ -174,8 +174,9 @@ class AnomalyDownstream(ResultsMixin):
     def render(self):
         print('Render anomaly detection results...')
         num_subplots = len(self.keys())
-        fig, axes = utils.get_axes_grid(num_subplots, ncols=4, ax_size=4)
+        fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=4)
         self._plot_rocs(axes)
+        fig.tight_layout()
         plt.savefig(self._get_output_path())
         plt.close()
 
@@ -255,6 +256,7 @@ class LatentDownstream(ResultsMixin):
         fig, axes = utils.get_axes_grid(num_subplots, ncols=3, ax_size=6)
         self._plot_reductions(axes)
         self._make_legend(fig, axes)
+        fig.tight_layout()
         plt.savefig(self._get_output_path())
         plt.close()
 
