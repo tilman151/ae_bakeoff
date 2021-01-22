@@ -98,8 +98,7 @@ class TestLatent(unittest.TestCase):
         self.assertEqual(expected_shape, samples.shape)
 
     def test_reconstruct(self):
-        batch, _ = next(iter(self.data.test_dataloader()))
-        comparison = self.latent_viz.reconstruct(batch)
+        _, comparison = self.latent_viz.reconstruct(self.data, num_comparison=32)
         expected_shape = torch.Size((3, 32 * 32 + 33 * 2, 2 * 32 + 3 * 2))  # 32 rows x 2 cols + 2 pad each side
         self.assertEqual(expected_shape, comparison.shape)
 

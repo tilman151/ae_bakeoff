@@ -8,7 +8,7 @@ from models import bottlenecks, encoders, decoders
 class TestBuildingDataModule(unittest.TestCase):
     def test_anomaly(self):
         dm = building.build_datamodule('vae', anomaly=True)
-        self.assertEqual(9, dm.exclude)
+        self.assertEqual(1, dm.exclude)
 
     def test_classification(self):
         dm = building.build_datamodule('classification')
@@ -22,7 +22,7 @@ class TestBuildingDataModule(unittest.TestCase):
             self.assertEqual(32, dm.batch_size)
         with self.subTest(case='anomaly'):
             dm = building.build_datamodule(anomaly=True)
-            self.assertEqual(9, dm.exclude)
+            self.assertEqual(1, dm.exclude)
             self.assertIsNone(dm.train_size)
             self.assertEqual(32, dm.batch_size)
 
@@ -67,7 +67,7 @@ class TestBuildingAE(unittest.TestCase):
         with self.subTest(model_type='sparse'):
             neck = self._build_neck('sparse')
             self.assertIsInstance(neck, bottlenecks.SparseBottleneck)
-            self.assertEqual(0.1, neck.sparsity)
+            self.assertEqual(0.25, neck.sparsity)
             self.assertEqual(1., neck.beta)
         with self.subTest(model_type='vq'):
             neck = self._build_neck('vq')
@@ -121,11 +121,23 @@ class TestBuildingAE(unittest.TestCase):
 
     def test_denoising_build(self):
         with self.subTest(model_type='denoising'):
-            ae = building.build_ae('denoising', (1, 32, 32))
+            ae = building.build_ae('denoising', (1, 32, 32), anomaly=False)
             self.assertNotEqual(0., ae.noise_ratio)
         with self.subTest(model_type='not denoising'):
-            ae = building.build_ae('vanilla', (1, 32, 32))
+            ae = building.build_ae('vanilla', (1, 32, 32), anomaly=False)
             self.assertEqual(0., ae.noise_ratio)
+
+    def test_anomaly_build(self):
+        with self.subTest(anomaly=False):
+            ae = building.build_ae('vanilla', (1, 32, 32), anomaly=False)
+            self.assertEqual(20, ae.encoder.latent_dim)
+            self.assertEqual(20, ae.bottleneck.latent_dim)
+            self.assertEqual(20, ae.decoder.latent_dim)
+        with self.subTest(anomaly=True):
+            ae = building.build_ae('vanilla', (1, 32, 32), anomaly=True)
+            self.assertEqual(2, ae.encoder.latent_dim)
+            self.assertEqual(2, ae.bottleneck.latent_dim)
+            self.assertEqual(2, ae.decoder.latent_dim)
 
 
 class TestBuildingLogger(unittest.TestCase):

@@ -85,7 +85,8 @@ class Latent:
 
     @classmethod
     def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path):
-        model = load_ae_from_checkpoint(model_type, dm.dims, checkpoint_path)
+        anomaly = True if f'{model_type}_anomaly' in checkpoint_path else False
+        model = load_ae_from_checkpoint(model_type, dm.dims, anomaly, checkpoint_path)
         latent = cls(model)
 
         return latent

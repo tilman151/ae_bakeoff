@@ -9,7 +9,7 @@ from models import encoders, decoders, bottlenecks
 
 
 def build_datamodule(model_type=None, batch_size=32, anomaly=False):
-    exclude = 9 if anomaly else None
+    exclude = 1 if anomaly else None
     train_size = 550 if model_type == 'classification' else None
     datamodule = data.MNISTDataModule('../data',
                                       batch_size=batch_size,
@@ -19,8 +19,8 @@ def build_datamodule(model_type=None, batch_size=32, anomaly=False):
     return datamodule
 
 
-def build_ae(model_type, input_shape):
-    latent_dim = 20
+def build_ae(model_type, input_shape, anomaly=False):
+    latent_dim = 2 if anomaly else 20
     noise_ratio = 0.5 if model_type == 'denoising' else None
     encoder, decoder = _build_networks(model_type, input_shape, latent_dim)
     bottleneck = _build_bottleneck(model_type, latent_dim)
@@ -67,9 +67,9 @@ def _build_bottleneck(model_type, latent_dim):
     return bottleneck
 
 
-def load_ae_from_checkpoint(model_type, input_shape, checkpoint_path):
+def load_ae_from_checkpoint(model_type, input_shape, anomaly, checkpoint_path):
     checkpoint = torch.load(checkpoint_path)
-    model = build_ae(model_type, input_shape)
+    model = build_ae(model_type, input_shape, anomaly)
     model.load_state_dict(checkpoint['state_dict'])
 
     return model

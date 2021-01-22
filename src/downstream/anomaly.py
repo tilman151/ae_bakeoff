@@ -49,7 +49,7 @@ class AnomalyDetection:
 
     @classmethod
     def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path):
-        model = load_ae_from_checkpoint(model_type, dm.dims, checkpoint_path)
+        model = load_ae_from_checkpoint(model_type, dm.dims, anomaly=True, checkpoint_path=checkpoint_path)
         classifier = cls(model)
 
         return classifier

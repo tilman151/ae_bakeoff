@@ -18,7 +18,7 @@ def run(model_type, batch_size, gpu, anomaly=False):
     task = 'anomaly' if anomaly else None
     pl.seed_everything(42)
     datamodule = build_datamodule(model_type, batch_size, anomaly)
-    ae = build_ae(model_type, datamodule.dims)
+    ae = build_ae(model_type, datamodule.dims, anomaly)
     logger = build_logger(model_type, task)
     checkpoint_path = _train(model_type, ae, datamodule, logger, gpu)
 
