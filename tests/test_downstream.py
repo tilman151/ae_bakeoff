@@ -12,7 +12,7 @@ from data import MNISTDataModule
 from downstream import AnomalyDetection, Classifier, Latent
 from downstream import formatting
 from models import encoders, bottlenecks
-from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
+from templates import ModelTestsMixin, FrozenLayerCheckMixin
 
 
 class TestAnomalyDetection(unittest.TestCase):

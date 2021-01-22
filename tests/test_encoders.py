@@ -1,10 +1,9 @@
 import unittest
 
 import torch
-from torch import nn
 
 from models import encoders
-from tests.templates import ModelTestsMixin, FrozenLayerCheckMixin
+from templates import ModelTestsMixin, FrozenLayerCheckMixin
 
 
 class TestDenseEncoder(ModelTestsMixin, unittest.TestCase):
