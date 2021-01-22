@@ -1,8 +1,8 @@
 import unittest
 from unittest import mock
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import TensorDataset, DataLoader
@@ -67,7 +67,13 @@ class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCa
         self.assertGreaterEqual(1, accuracy)
 
     def test_layers_frozen(self):
-        self._check_frozen(self.net.encoder)
+        with self.subTest('should_be_frozen'):
+            self._check_frozen(self.net.encoder)
+        with self.subTest('should_be_unfrozen'):
+            self.net.freeze_encoder = False
+            self.net.encoder = encoders.DenseEncoder((1, 32, 32), 3, 64)
+            self.net.train()
+            self._check_frozen(self.net.encoder, should_be_frozen=False)
 
     def test_accuracy_returned_on_test(self):
         datamodule = MNISTDataModule(data_dir='../data')

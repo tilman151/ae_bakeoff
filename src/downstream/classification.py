@@ -7,13 +7,14 @@ from building import load_ae_from_checkpoint
 
 
 class Classifier(pl.LightningModule):
-    def __init__(self, encoder, bottleneck, num_classes):
+    def __init__(self, encoder, bottleneck, num_classes, freeze_encoder=True):
         super(Classifier, self).__init__()
 
         self.encoder = encoder
         self.bottleneck = bottleneck
         self.latent_dim = self.bottleneck.latent_dim
         self.num_classes = num_classes
+        self.freeze_encoder = freeze_encoder
 
         self.criterion = nn.CrossEntropyLoss()
         self.classifier = nn.Linear(self.latent_dim, self.num_classes)
@@ -61,8 +62,9 @@ class Classifier(pl.LightningModule):
         return accuracy
 
     def _freeze_encoder(self):
-        for m in self.encoder.modules():
-            utils.freeze_layer(m)
+        if self.freeze_encoder:
+            for m in self.encoder.modules():
+                utils.freeze_layer(m)
 
     def train(self, mode=True):
         super().train(mode)
