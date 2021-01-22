@@ -79,7 +79,10 @@ class Latent:
         latents = [self.autoencoder.bottleneck(x)[0] for x in latents]
         latents = torch.cat(latents).numpy()
 
-        reduced_latents = umap.UMAP().fit_transform(latents)
+        if latents.shape[1] > 2:
+            reduced_latents = umap.UMAP().fit_transform(latents)
+        else:
+            reduced_latents = latents
 
         return reduced_latents, labels
 
