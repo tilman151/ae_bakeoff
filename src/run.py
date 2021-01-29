@@ -1,5 +1,6 @@
 import pytorch_lightning as pl
 
+import data
 from building import build_ae, build_datamodule, build_logger
 
 AUTOENCODERS = ['shallow',
@@ -13,13 +14,13 @@ AUTOENCODERS = ['shallow',
                 'vq']
 
 
-def run(model_type, batch_size, gpu, anomaly=False):
+def run(model_type, dataset, batch_size, gpu, anomaly=False):
     assert model_type in AUTOENCODERS
     task = 'anomaly' if anomaly else None
     pl.seed_everything(42)
-    datamodule = build_datamodule(model_type, batch_size, anomaly)
+    datamodule = build_datamodule(dataset, model_type, batch_size, anomaly)
     ae = build_ae(model_type, datamodule.dims, anomaly)
-    logger = build_logger(model_type, task)
+    logger = build_logger(model_type, dataset, task)
     checkpoint_path = _train(model_type, ae, datamodule, logger, gpu)
 
     return checkpoint_path
@@ -68,9 +69,10 @@ if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run unsupervised autoencoder training.')
     parser.add_argument('model_type', choices=AUTOENCODERS)
+    parser.add_argument('--dataset', default='mnist', choices=data.AVAILABLE_DATASETS.keys())
     parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
     parser.add_argument('--gpu', action='store_true', help='use GPU for training')
     parser.add_argument('--anomaly', action='store_true', help='train for anomaly detection')
     opt = parser.parse_args()
 
-    print(run(opt.model_type, opt.batch_size, opt.gpu, opt.anomaly))
+    print(run(opt.model_type, opt.dataset, opt.batch_size, opt.gpu, opt.anomaly))

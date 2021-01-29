@@ -2,26 +2,29 @@ import unittest
 from unittest import mock
 
 import building
+import data
 from models import bottlenecks, encoders, decoders
 
 
 class TestBuildingDataModule(unittest.TestCase):
     def test_anomaly(self):
-        dm = building.build_datamodule('vae', anomaly=True)
+        dm = building.build_datamodule('mnist', model_type='vae', anomaly=True)
         self.assertEqual(1, dm.exclude)
 
     def test_classification(self):
-        dm = building.build_datamodule('classification')
+        dm = building.build_datamodule('mnist', model_type='classification')
         self.assertEqual(550, dm.train_size)  # 1% of training data
 
     def test_no_model_type(self):
         with self.subTest(case='default'):
             dm = building.build_datamodule()
+            self.assertIsInstance(dm, data.MNISTDataModule)
             self.assertIsNone(dm.exclude)
             self.assertIsNone(dm.train_size)
             self.assertEqual(32, dm.batch_size)
         with self.subTest(case='anomaly'):
             dm = building.build_datamodule(anomaly=True)
+            self.assertIsInstance(dm, data.MNISTDataModule)
             self.assertEqual(1, dm.exclude)
             self.assertIsNone(dm.train_size)
             self.assertEqual(32, dm.batch_size)
@@ -36,9 +39,11 @@ class TestBuildingDataModule(unittest.TestCase):
                 'beta_vae_loose',
                 'vq']
         for model_type in rest:
-            with self.subTest(model_type=model_type):
-                dm = building.build_datamodule(model_type)
-                self.assertIsNone(dm.exclude)
+            for dataset in data.AVAILABLE_DATASETS.keys():
+                with self.subTest(model_type=model_type):
+                    dm = building.build_datamodule(dataset, model_type)
+                    self.assertIsInstance(dm, data.AVAILABLE_DATASETS[dataset])
+                    self.assertIsNone(dm.exclude)
 
 
 class TestBuildingAE(unittest.TestCase):
@@ -143,17 +148,18 @@ class TestBuildingAE(unittest.TestCase):
 class TestBuildingLogger(unittest.TestCase):
     @mock.patch('os.path.dirname', return_value='/foo')
     def test__get_log_dir(self, mock_dirname):
-        expected_logdir = '/logs'
-        actual_log_dir = building._get_log_dir()
+        expected_logdir = '/logs/mnist'
+        actual_log_dir = building._get_log_dir('mnist')
         self.assertEqual(expected_logdir, actual_log_dir)
 
     @mock.patch('os.path.dirname', return_value='/foo')
     def test_build_logger(self, mock_dirname):
+        model_type = 'vae'
+        dataset = 'mnist'
         with self.subTest(case='without task'):
-            model_type = 'vae'
-            logger = building.build_logger(model_type)
+            logger = building.build_logger(model_type, dataset)
             self.assertTrue(logger.root_dir.endswith(f'{model_type}_general'))
         with self.subTest(case='with task'):
             task = 'anomaly'
-            logger = building.build_logger(model_type, task)
+            logger = building.build_logger(model_type, dataset, task)
             self.assertTrue(logger.root_dir.endswith(f'{model_type}_{task}'))

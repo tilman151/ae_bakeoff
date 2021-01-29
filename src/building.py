@@ -8,15 +8,25 @@ import lightning
 from models import encoders, decoders, bottlenecks
 
 
-def build_datamodule(model_type=None, batch_size=32, anomaly=False):
+def build_datamodule(dataset=None, model_type=None, batch_size=32, anomaly=False):
     exclude = 1 if anomaly else None
     train_size = 550 if model_type == 'classification' else None
-    datamodule = data.MNISTDataModule('../data',
-                                      batch_size=batch_size,
-                                      train_size=train_size,
-                                      exclude=exclude)
+    dataset_constructor = _get_dataset_constructor(dataset)
+    datamodule = dataset_constructor('../data',
+                                     batch_size=batch_size,
+                                     train_size=train_size,
+                                     exclude=exclude)
 
     return datamodule
+
+
+def _get_dataset_constructor(dataset):
+    if dataset == 'mnist' or dataset is None:
+        return data.MNISTDataModule
+    elif dataset in data.AVAILABLE_DATASETS:
+        return data.AVAILABLE_DATASETS[dataset]
+    else:
+        raise ValueError(f'The dataset {dataset} is not supported. Choose one of {data.AVAILABLE_DATASETS.keys()}')
 
 
 def build_ae(model_type, input_shape, anomaly=False):
@@ -75,17 +85,23 @@ def load_ae_from_checkpoint(model_type, input_shape, anomaly, checkpoint_path):
     return model
 
 
-def build_logger(model_type, task=None):
-    log_dir = _get_log_dir()
-    task = task or 'general'
-    experiment_name = f'{model_type}_{task}'
+def build_logger(model_type, dataset, task=None):
+    log_dir = _get_log_dir(dataset)
+    experiment_name = _get_experiment_name(model_type, task)
     logger = loggers.TensorBoardLogger(log_dir, experiment_name)
 
     return logger
 
 
-def _get_log_dir():
+def _get_log_dir(dataset):
     script_path = os.path.dirname(__file__)
-    log_dir = os.path.normpath(os.path.join(script_path, '..', 'logs'))
+    log_dir = os.path.normpath(os.path.join(script_path, '..', 'logs', dataset))
 
     return log_dir
+
+
+def _get_experiment_name(model_type, task):
+    task = task or 'general'
+    experiment_name = f'{model_type}_{task}'
+
+    return experiment_name

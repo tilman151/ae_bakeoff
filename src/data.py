@@ -77,3 +77,8 @@ class FashionMNISTDataModule(MNISTDerivativeDataModule):
 class KMNISTDataModule(MNISTDerivativeDataModule):
     def _get_mnist(self, train, transform=None, download=False):
         return KMNIST(self.data_dir, train=train, transform=transform, download=download)
+
+
+AVAILABLE_DATASETS = {'mnist': MNISTDataModule,
+                      'fmnist': FashionMNISTDataModule,
+                      'kmnist': KMNISTDataModule}
