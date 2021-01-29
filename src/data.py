@@ -27,16 +27,19 @@ class MNISTDataModule(pl.LightningDataModule):
         self.mnist_test = None
 
     def prepare_data(self):
-        MNIST(self.data_dir, train=True, download=True)
-        MNIST(self.data_dir, train=False, download=True)
+        self._get_mnist(train=True, download=True)
+        self._get_mnist(train=False, download=True)
+
+    def _get_mnist(self, train, transform=None, download=True):
+        return MNIST(self.data_dir, train=train, transform=transform, download=download)
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            mnist_full = MNIST(self.data_dir, train=True, transform=self.transform)
+            mnist_full = self._get_mnist(train=True, transform=self.transform)
             self.mnist_train, self.mnist_val = self._split_train_val(mnist_full)
 
         if stage == 'test' or stage is None:
-            self.mnist_test = MNIST(self.data_dir, train=False, transform=self.transform)
+            self.mnist_test = self._get_mnist(train=False, transform=self.transform)
 
     def _split_train_val(self, mnist_full):
         filter_mask = torch.zeros(len(mnist_full), dtype=torch.int)
