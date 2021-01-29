@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, FashionMNIST, KMNIST
 
 
 class MNISTDerivativeDataModule(pl.LightningDataModule):
@@ -65,6 +65,15 @@ class MNISTDerivativeDataModule(pl.LightningDataModule):
 
 
 class MNISTDataModule(MNISTDerivativeDataModule):
-
     def _get_mnist(self, train, transform=None, download=False):
         return MNIST(self.data_dir, train=train, transform=transform, download=download)
+
+
+class FashionMNISTDataModule(MNISTDerivativeDataModule):
+    def _get_mnist(self, train, transform=None, download=False):
+        return FashionMNIST(self.data_dir, train=train, transform=transform, download=download)
+
+
+class KMNISTDataModule(MNISTDerivativeDataModule):
+    def _get_mnist(self, train, transform=None, download=False):
+        return KMNIST(self.data_dir, train=train, transform=transform, download=download)

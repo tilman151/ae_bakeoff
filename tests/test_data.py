@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from data import MNISTDataModule
+from data import MNISTDataModule, FashionMNISTDataModule, KMNISTDataModule
 
 
 class TestMNISTTemplate:
@@ -44,3 +44,13 @@ class TestMNISTTemplate:
 class TestMNIST(unittest.TestCase, TestMNISTTemplate):
     def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
         return MNISTDataModule(data_root, batch_size, train_size, exclude)
+
+
+class TestFashionMNIST(unittest.TestCase, TestMNISTTemplate):
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        return FashionMNISTDataModule(data_root, batch_size, train_size, exclude)
+
+
+class TestKMNIST(unittest.TestCase, TestMNISTTemplate):
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        return KMNISTDataModule(data_root, batch_size, train_size, exclude)
