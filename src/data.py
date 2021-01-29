@@ -8,7 +8,7 @@ from torchvision import transforms
 from torchvision.datasets import MNIST
 
 
-class MNISTDataModule(pl.LightningDataModule):
+class MNISTDerivativeDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = './', batch_size=32, train_size=None, exclude=None):
         super().__init__()
         self.data_dir = data_dir
@@ -26,12 +26,12 @@ class MNISTDataModule(pl.LightningDataModule):
         self.mnist_val = None
         self.mnist_test = None
 
+    def _get_mnist(self, train, transform=None, download=False):
+        raise NotImplementedError
+
     def prepare_data(self):
         self._get_mnist(train=True, download=True)
         self._get_mnist(train=False, download=True)
-
-    def _get_mnist(self, train, transform=None, download=True):
-        return MNIST(self.data_dir, train=train, transform=transform, download=download)
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
@@ -62,3 +62,9 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=self.num_workers)
+
+
+class MNISTDataModule(MNISTDerivativeDataModule):
+
+    def _get_mnist(self, train, transform=None, download=False):
+        return MNIST(self.data_dir, train=train, transform=transform, download=download)
