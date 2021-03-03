@@ -18,6 +18,7 @@ Currently featured autoencoders:
 
 They are evaluated on for the following tasks:
 
+* Training Time
 * Reconstruction quality
 * Quality of decoded samples from the latent space (if possible)
 * Quality of latent space interpolation
