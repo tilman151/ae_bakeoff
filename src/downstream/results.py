@@ -6,7 +6,7 @@ import numpy as np
 from downstream import save_imagegrid, save_oscillating_video
 
 
-class ResultsMixin:
+class AbstractResults:
     def __init__(self, dataset, load_from_disk=True, tag=None):
         self.dataset = dataset
         self.tag = tag

@@ -10,7 +10,7 @@ import data
 import downstream
 import run
 import utils
-from downstream.results import ResultsMixin
+from downstream.results import AbstractResults
 
 
 class ReproductionRun:
@@ -100,7 +100,7 @@ class ReproductionRun:
         self.reconstruction_results.render()
 
 
-class Checkpoints(ResultsMixin):
+class Checkpoints(AbstractResults):
     def _get_output_path(self):
         pass
 
@@ -114,14 +114,14 @@ class Checkpoints(ResultsMixin):
         return checkpoint_path
 
 
-class ClassificationDownstream(ResultsMixin):
+class ClassificationDownstream(AbstractResults):
     def add_accuracy_for(self, model_type, checkpoint_path):
         accuracy = self._get_test_accuracy(model_type, checkpoint_path)
         self[model_type] = accuracy
         self.save()
 
     def _get_test_accuracy(self, model_type, checkpoint_path):
-        data_module = building.build_datamodule('classification')
+        data_module = building.build_datamodule(self.dataset, 'classification')
         classifier = downstream.Classifier.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path)
         trainer = self._get_classification_trainer()
 
@@ -164,7 +164,7 @@ class ClassificationDownstream(ResultsMixin):
         return results_path
 
 
-class AnomalyDownstream(ResultsMixin):
+class AnomalyDownstream(AbstractResults):
     def add_roc_for(self, model_type, checkpoint_path):
         fpr, tpr, thresholds, auc = self._get_test_roc(model_type, checkpoint_path)
         self[model_type] = {'fpr': fpr.tolist(),
@@ -174,7 +174,7 @@ class AnomalyDownstream(ResultsMixin):
         self.save()
 
     def _get_test_roc(self, model_type, checkpoint_path):
-        data_module = building.build_datamodule(anomaly=True)
+        data_module = building.build_datamodule(self.dataset, anomaly=True)
         anomaly_detector = downstream.AnomalyDetection.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path)
         fpr, tpr, thresholds, auc = anomaly_detector.get_test_roc(data_module)
 
@@ -210,7 +210,7 @@ class AnomalyDownstream(ResultsMixin):
         return results_path
 
 
-class LatentDownstream(ResultsMixin):
+class LatentDownstream(AbstractResults):
     def add_samples_for(self, model_type, checkpoint_path):
         datamodule = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, datamodule, checkpoint_path)
@@ -248,7 +248,7 @@ class LatentDownstream(ResultsMixin):
         self.save_array_result(model_type, f'reduction{self._get_tag_suffix()}', reduction, labels)
 
     def _get_datamodule(self):
-        data_module = building.build_datamodule()
+        data_module = building.build_datamodule(self.dataset)
         data_module.prepare_data()
         data_module.setup('test')
 
@@ -300,7 +300,7 @@ class LatentDownstream(ResultsMixin):
         return '' if self.tag is None else f'_{self.tag}'
 
 
-class ReconstructionResults(ResultsMixin):
+class ReconstructionResults(AbstractResults):
     def add_reconstructions_for(self, model_type, checkpoint_path):
         data_module = self._get_datamodule()
         latent_sampler = downstream.Latent.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path)
@@ -308,7 +308,7 @@ class ReconstructionResults(ResultsMixin):
         self._save_reconstructions(model_type, loss, reconstructions)
 
     def _get_datamodule(self):
-        data_module = building.build_datamodule()
+        data_module = building.build_datamodule(self.dataset)
         data_module.prepare_data()
         data_module.setup('test')
 
