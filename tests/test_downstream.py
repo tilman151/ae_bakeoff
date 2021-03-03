@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from unittest import mock
 
@@ -6,11 +7,14 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
+import utils
 from building import build_ae
 from data import MNISTDataModule
 from downstream import AnomalyDetection, Classifier, Latent
 from downstream import formatting
+from downstream.time import TrainingTime
 from models import encoders, bottlenecks
 from templates import ModelTestsMixin, FrozenLayerCheckMixin
 
@@ -163,3 +167,36 @@ class TestFormatting(unittest.TestCase):
         auc = 0.5
         formatting.plot_roc(plt.gca(), tpr, fpr, auc)
         fig.show()
+
+
+class TestTrainingTime(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = utils.tempdir()
+        self.num_events = 100
+        self.start_time = datetime.datetime.now()
+        self.end_time = self.start_time + datetime.timedelta(seconds=self.num_events)
+        self.summary_writer = SummaryWriter(self.temp_dir, filename_suffix="tmp")
+        self.event_file_path = self.summary_writer.file_writer.event_writer._file_name
+
+    def test_creation(self):
+        with self.assertRaises(ValueError):
+            TrainingTime("bogus/path")
+        with self.assertRaises(RuntimeError):
+            TrainingTime(self.event_file_path)
+        self._add_events()
+        TrainingTime(self.event_file_path)
+
+    def test_training_time_calculation(self):
+        self._add_events()
+        training_time = TrainingTime(self.event_file_path)
+        expected_training_time = self.end_time - self.start_time
+        actual_training_time = training_time.get_training_time()
+        self.assertEqual(expected_training_time, actual_training_time)
+
+    def _add_events(self):
+        for i in range(self.num_events):
+            train_time = self.start_time + datetime.timedelta(seconds=i)
+            self.summary_writer.add_scalar(TrainingTime._TRAIN_TAG, i, global_step=i, walltime=train_time.timestamp())
+            val_time = self.start_time + datetime.timedelta(seconds=i+1)
+            self.summary_writer.add_scalar(TrainingTime._VAL_TAG, i, global_step=i, walltime=val_time.timestamp())
+        self.summary_writer.flush()
