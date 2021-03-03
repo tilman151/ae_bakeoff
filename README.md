@@ -16,7 +16,7 @@ Currently featured autoencoders:
 * beta-VAE
 * vq-VAE
 
-They are evaluated on MNIST for the following tasks:
+They are evaluated on for the following tasks:
 
 * Reconstruction quality
 * Quality of decoded samples from the latent space (if possible)
@@ -24,6 +24,12 @@ They are evaluated on MNIST for the following tasks:
 * Structure of the latent space visualized with [UMAP](https://github.com/lmcinnes/umap)
 * ROC curve for anomaly detection with the reconstruction error
 * Classification accuracy of a linear layer fitted on the autoencoder's features
+
+Currently available datasets are:
+
+* MNIST
+* Fashion-MNIST (FMNIST)
+* Kuzushiji-MNIST (KMNIST)
 
 ## Installation
 
@@ -45,16 +51,17 @@ python -m unittest
 
 ## Usage
 
-To one-click reproduce all results, call:
+To one-click reproduce the results for a dataset, call:
 
 ```shell
 cd ./src
-python reproduce.py --batch_size 256 [--gpu]
+python reproduce.py --dataset <dataset> --batch_size 256 [--gpu]
 ```
 
 If you want to run any specific experiment, call:
 
 ```shell
-python run.py <autoencoder_type> --batch_size 256 [--gpu] [--anomaly]
+python run.py <autoencoder_type> --dataset <dataset> --batch_size 256 [--gpu] [--anomaly]
 ```
 
+All experiments are recorded in the dicrectory `./logs/<dataset>`.
