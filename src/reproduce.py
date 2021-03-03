@@ -101,6 +101,7 @@ class ReproductionRun:
             self.reconstruction_results.add_reconstructions_for(model_type, checkpoint_path)
 
     def render_results(self):
+        self.training_time_results.render()
         self.classification_results.render()
         self.anomaly_detection_results.render()
         self.latent_results.render()
@@ -354,6 +355,7 @@ class TrainingTimeResults(AbstractResults):
         time_extractor = downstream.TrainingTime(event_file_path)
         training_time = time_extractor.get_training_time()
         self.results[model_type] = str(training_time)
+        self.save()
 
     def _get_event_file_path(self, checkpoint_path):
         return os.path.dirname(os.path.dirname(checkpoint_path))
