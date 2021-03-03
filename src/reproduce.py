@@ -23,6 +23,7 @@ class ReproductionRun:
         self.gpu = gpu
 
         self.checkpoints = Checkpoints(dataset, load_checkpoints)
+        self.training_time_results = TrainingTimeResults(dataset, load_downstream_results)
         self.classification_results = ClassificationDownstream(dataset, load_downstream_results)
         self.anomaly_detection_results = AnomalyDownstream(dataset, load_downstream_results)
         self.latent_results = LatentDownstream(dataset, load_downstream_results)
@@ -52,10 +53,17 @@ class ReproductionRun:
                                                               anomaly=True)
 
     def perform_downstream(self, model_type):
+        self.perform_training_time(model_type)
         self.perform_classification(model_type)
         self.perform_anomaly_detection(model_type)
         self.perform_latent_tasks(model_type)
         self.perform_reconstruction(model_type)
+
+    def perform_training_time(self, model_type):
+        print("Extract Training Time...")
+        if model_type not in self.training_time_results:
+            checkpoint_path = self.checkpoints[model_type]['general']
+            self.training_time_results.add_training_time_for(model_type, checkpoint_path)
 
     def perform_classification(self, model_type):
         print('Classification...')
@@ -338,6 +346,37 @@ class ReconstructionResults(AbstractResults):
         results_path = os.path.join(log_path, 'reconstruction_results.json')
 
         return results_path
+
+
+class TrainingTimeResults(AbstractResults):
+    def add_training_time_for(self, model_type, checkpoint_path):
+        event_file_path = self._get_event_file_path(checkpoint_path)
+        time_extractor = downstream.TrainingTime(event_file_path)
+        training_time = time_extractor.get_training_time()
+        self.results[model_type] = str(training_time)
+
+    def _get_event_file_path(self, checkpoint_path):
+        return os.path.dirname(os.path.dirname(checkpoint_path))
+
+    def _get_results_path(self):
+        log_path = self._get_log_path()
+        results_path = os.path.join(log_path, 'training_time_results.json')
+
+        return results_path
+
+    def render(self):
+        print('Render training time table...')
+        markdown_table = pytablewriter.MarkdownTableWriter(table_name='Training Times',
+                                                           headers=list(self.keys()),
+                                                           value_matrix=[list(self.values())])
+        markdown_file = self._get_output_path()
+        markdown_table.dump(markdown_file)
+
+    def _get_output_path(self):
+        log_path = self._get_log_path()
+        output_path = os.path.join(log_path, 'training_time.md')
+
+        return output_path
 
 
 if __name__ == '__main__':
