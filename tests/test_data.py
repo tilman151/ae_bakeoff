@@ -1,15 +1,15 @@
 import os
 import unittest
 
-from data import MNISTDataModule
+from data import MNISTDataModule, FashionMNISTDataModule, KMNISTDataModule
 
 
-class TestMNIST(unittest.TestCase):
+class TestMNISTTemplate:
     DATA_ROOT = os.path.join(os.path.dirname(__file__), '..', 'data')
 
     def test_anomaly(self):
         anomaly = 9
-        datamodule = MNISTDataModule(self.DATA_ROOT, exclude=anomaly)
+        datamodule = self._get_mnist(self.DATA_ROOT, exclude=anomaly)
         datamodule.prepare_data()
         datamodule.setup()
         with self.subTest(split='train'):
@@ -31,8 +31,26 @@ class TestMNIST(unittest.TestCase):
 
     def test_train_size(self):
         train_size = 500
-        datamodule = MNISTDataModule(self.DATA_ROOT, train_size=train_size)
+        datamodule = self._get_mnist(self.DATA_ROOT, train_size=train_size)
         datamodule.prepare_data()
         datamodule.setup()
         train_data = datamodule.train_dataloader().dataset
         self.assertEqual(train_size, len(train_data))
+
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        raise NotImplementedError
+
+
+class TestMNIST(unittest.TestCase, TestMNISTTemplate):
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        return MNISTDataModule(data_root, batch_size, train_size, exclude)
+
+
+class TestFashionMNIST(unittest.TestCase, TestMNISTTemplate):
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        return FashionMNISTDataModule(data_root, batch_size, train_size, exclude)
+
+
+class TestKMNIST(unittest.TestCase, TestMNISTTemplate):
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        return KMNISTDataModule(data_root, batch_size, train_size, exclude)

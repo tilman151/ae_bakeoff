@@ -1,0 +1,42 @@
+{
+    "shallow": {
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\shallow.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\shallow.npz"
+    },
+    "vanilla": {
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\vanilla.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\vanilla.npz"
+    },
+    "stacked": {
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\stacked.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\stacked.npz"
+    },
+    "sparse": {
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\sparse.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\sparse.npz"
+    },
+    "denoising": {
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\denoising.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\denoising.npz"
+    },
+    "vae": {
+        "samples": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\samples\\vae.jpeg",
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\vae.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\vae.npz"
+    },
+    "beta_vae_strict": {
+        "samples": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\samples\\beta_vae_strict.jpeg",
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\beta_vae_strict.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\beta_vae_strict.npz"
+    },
+    "beta_vae_loose": {
+        "samples": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\samples\\beta_vae_loose.jpeg",
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\beta_vae_loose.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\beta_vae_loose.npz"
+    },
+    "vq": {
+        "samples": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\samples\\vq.jpeg",
+        "interpolation": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\interpolation\\vq.gif",
+        "reduction": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reduction\\vq.npz"
+    }
+}

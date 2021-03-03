@@ -5,10 +5,10 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
-from torchvision.datasets import MNIST
+from torchvision.datasets import MNIST, FashionMNIST, KMNIST
 
 
-class MNISTDataModule(pl.LightningDataModule):
+class MNISTDerivativeDataModule(pl.LightningDataModule):
     def __init__(self, data_dir: str = './', batch_size=32, train_size=None, exclude=None):
         super().__init__()
         self.data_dir = data_dir
@@ -26,17 +26,20 @@ class MNISTDataModule(pl.LightningDataModule):
         self.mnist_val = None
         self.mnist_test = None
 
+    def _get_mnist(self, train, transform=None, download=False):
+        raise NotImplementedError
+
     def prepare_data(self):
-        MNIST(self.data_dir, train=True, download=True)
-        MNIST(self.data_dir, train=False, download=True)
+        self._get_mnist(train=True, download=True)
+        self._get_mnist(train=False, download=True)
 
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            mnist_full = MNIST(self.data_dir, train=True, transform=self.transform)
+            mnist_full = self._get_mnist(train=True, transform=self.transform)
             self.mnist_train, self.mnist_val = self._split_train_val(mnist_full)
 
         if stage == 'test' or stage is None:
-            self.mnist_test = MNIST(self.data_dir, train=False, transform=self.transform)
+            self.mnist_test = self._get_mnist(train=False, transform=self.transform)
 
     def _split_train_val(self, mnist_full):
         filter_mask = torch.zeros(len(mnist_full), dtype=torch.int)
@@ -59,3 +62,23 @@ class MNISTDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=self.num_workers)
+
+
+class MNISTDataModule(MNISTDerivativeDataModule):
+    def _get_mnist(self, train, transform=None, download=False):
+        return MNIST(self.data_dir, train=train, transform=transform, download=download)
+
+
+class FashionMNISTDataModule(MNISTDerivativeDataModule):
+    def _get_mnist(self, train, transform=None, download=False):
+        return FashionMNIST(self.data_dir, train=train, transform=transform, download=download)
+
+
+class KMNISTDataModule(MNISTDerivativeDataModule):
+    def _get_mnist(self, train, transform=None, download=False):
+        return KMNIST(self.data_dir, train=train, transform=transform, download=download)
+
+
+AVAILABLE_DATASETS = {'mnist': MNISTDataModule,
+                      'fmnist': FashionMNISTDataModule,
+                      'kmnist': KMNISTDataModule}

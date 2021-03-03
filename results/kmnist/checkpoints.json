@@ -1,0 +1,38 @@
+{
+    "shallow": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\shallow_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\shallow_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "vanilla": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\vanilla_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\vanilla_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "stacked": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\stacked_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\stacked_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "sparse": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\sparse_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\sparse_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "denoising": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\denoising_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\denoising_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "vae": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\vae_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\vae_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "beta_vae_strict": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\beta_vae_strict_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\beta_vae_strict_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "beta_vae_loose": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\beta_vae_loose_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\beta_vae_loose_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    },
+    "vq": {
+        "general": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\vq_general\\version_0\\checkpoints\\epoch=59.ckpt",
+        "anomaly": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\kmnist\\vq_anomaly\\version_0\\checkpoints\\epoch=59.ckpt"
+    }
+}
