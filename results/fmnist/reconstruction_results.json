@@ -1,0 +1,38 @@
+{
+    "shallow": {
+        "loss": 240.92552185058594,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\shallow.jpeg"
+    },
+    "vanilla": {
+        "loss": 212.60025024414062,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\vanilla.jpeg"
+    },
+    "stacked": {
+        "loss": 228.19024658203125,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\stacked.jpeg"
+    },
+    "sparse": {
+        "loss": 212.7216033935547,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\sparse.jpeg"
+    },
+    "denoising": {
+        "loss": 247.83689880371094,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\denoising.jpeg"
+    },
+    "vae": {
+        "loss": 224.51535034179688,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\vae.jpeg"
+    },
+    "beta_vae_strict": {
+        "loss": 231.09339904785156,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\beta_vae_strict.jpeg"
+    },
+    "beta_vae_loose": {
+        "loss": 219.10394287109375,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\beta_vae_loose.jpeg"
+    },
+    "vq": {
+        "loss": 213.04635620117188,
+        "reconstructions": "C:\\Users\\Tilman\\Documents\\ae_bakeoff\\logs\\fmnist\\reconstructions\\vq.jpeg"
+    }
+}
