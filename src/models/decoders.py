@@ -105,3 +105,33 @@ class StackedDecoder(DenseDecoder):
         outputs = inputs.view(-1, *self.output_shape)
 
         return outputs
+
+
+class CNNDecoder(nn.Module):
+    def __init__(self, latent_dim, num_layers, output_shape):
+        super().__init__()
+
+        self.output_shape = output_shape
+        self.num_layers = num_layers
+        self.latent_dim = latent_dim
+
+        self.linear, self.convs = self._build_layers()
+
+    def _build_layers(self):
+        flat_shape = 7 * 7 * 128
+        linear = nn.Linear(self.latent_dim, flat_shape)
+        convs = [nn.ReLU(True),
+                 nn.ConvTranspose2d(in_channels=128, out_channels=64, kernel_size=3, stride=2),
+                 nn.ReLU(True),
+                 nn.ConvTranspose2d(in_channels=64, out_channels=1, kernel_size=3, stride=2, output_padding=1),
+                 nn.Sigmoid()]
+        convs = nn.Sequential(*convs)
+
+        return linear, convs
+
+    def forward(self, inputs):
+        flat_inputs = self.linear(inputs)
+        conv_inputs = flat_inputs.view(-1, 128, 7, 7)
+        outputs = self.convs(conv_inputs)
+
+        return outputs

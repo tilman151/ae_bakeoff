@@ -47,3 +47,10 @@ class TestStackedDecoder(unittest.TestCase, FrozenLayerCheckMixin):
         self.net.train()
         self._check_frozen(self.net.layers[2:])
         self._check_frozen(self.net.layers[:2], should_be_frozen=False)
+
+
+class TestCNNDecoder(unittest.TestCase, ModelTestsMixin):
+    def setUp(self):
+        self.test_inputs = torch.randn(16, 32)
+        self.output_shape = torch.Size((16, 1, 32, 32))
+        self.net = decoders.CNNDecoder(32, 3, self.output_shape[1:])

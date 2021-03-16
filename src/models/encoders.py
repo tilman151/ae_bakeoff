@@ -99,3 +99,29 @@ class StackedEncoder(DenseEncoder):
             inputs = self.layers[n](inputs)
 
         return inputs
+
+
+class CNNEncoder(nn.Module):
+    def __init__(self, input_shape, num_layers, latent_dim):
+        super().__init__()
+
+        self.input_shape = input_shape
+        self.num_layers = num_layers
+        self.latent_dim = latent_dim
+
+        self.layers = self._build_layers()
+
+    def _build_layers(self):
+        flat_shape = 7 * 7 * 128
+        layers = [nn.Conv2d(in_channels=1, out_channels=64, kernel_size=3, stride=2),
+                  nn.ReLU(True),
+                  nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, stride=2),
+                  nn.ReLU(True),
+                  nn.Flatten(),
+                  nn.Linear(flat_shape, self.latent_dim)]
+        layers = nn.Sequential(*layers)
+
+        return layers
+
+    def forward(self, inputs):
+        return self.layers(inputs)
