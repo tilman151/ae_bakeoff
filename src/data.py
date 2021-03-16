@@ -3,9 +3,9 @@ import os
 
 import pytorch_lightning as pl
 import torch
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader, Subset, Dataset, ConcatDataset
 from torchvision import transforms
-from torchvision.datasets import MNIST, FashionMNIST, KMNIST
+from torchvision.datasets import MNIST, FashionMNIST, KMNIST, EMNIST
 
 
 class MNISTDerivativeDataModule(pl.LightningDataModule):
@@ -79,6 +79,48 @@ class KMNISTDataModule(MNISTDerivativeDataModule):
         return KMNIST(self.data_dir, train=train, transform=transform, download=download)
 
 
+class MNISTWithEMNISTTest(Dataset):
+    def __init__(self, data_dir, train=True, transform=None, target_transform=None, download=False):
+        mnist = MNIST(data_dir, train, transform, target_transform, download)
+        emnist = EMNIST(data_dir,
+                        "letters",
+                        train=train,
+                        transform=transform,
+                        target_transform=target_transform,
+                        download=download)
+
+        self.train = train
+        self.half_test_len = int(len(mnist) * 0.5)
+        if train:
+            self.dataset = mnist
+        else:
+            mnist_part = self._get_random_split(mnist, self.half_test_len)
+            emnist_part = self._get_random_split(emnist, self.half_test_len)
+            self.dataset = ConcatDataset([mnist_part, emnist_part])
+
+    def _get_random_split(self, dataset, size):
+        mnist_idx = torch.randperm(len(dataset))[:size]
+        split = Subset(dataset, mnist_idx)
+
+        return split
+
+    def __getitem__(self, index):
+        features, label = self.dataset[index]
+        if not self.train and index >= self.half_test_len:
+            label = 10  # Treat EMNIST samples in test as 11th class
+
+        return features, label
+
+    def __len__(self):
+        return len(self.dataset)
+
+
+class MNISTWithEMNISTTestDataModule(MNISTDerivativeDataModule):
+    def _get_mnist(self, train, transform=None, download=False):
+        return MNISTWithEMNISTTest(self.data_dir, train=train, transform=transform, download=download)
+
+
 AVAILABLE_DATASETS = {'mnist': MNISTDataModule,
                       'fmnist': FashionMNISTDataModule,
-                      'kmnist': KMNISTDataModule}
+                      'kmnist': KMNISTDataModule,
+                      'emnist': MNISTWithEMNISTTestDataModule}
