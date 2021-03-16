@@ -34,7 +34,7 @@ def build_ae(model_type, input_shape, anomaly=False):
     noise_ratio = 0.5 if model_type == 'denoising' else None
     encoder, decoder = _build_networks(model_type, input_shape, latent_dim)
     bottleneck = _build_bottleneck(model_type, latent_dim)
-    ae = lightning.Autoencoder(encoder, bottleneck, decoder, lr=0.001, noise_ratio=noise_ratio)
+    ae = lightning.Autoencoder(encoder, bottleneck, decoder, lr=0.0001, noise_ratio=noise_ratio)
 
     return ae
 
@@ -52,8 +52,8 @@ def _build_networks(model_type, input_shape, latent_dim):
         encoder = encoders.StackedEncoder(input_shape, num_layers, enc_dim)
         decoder = decoders.StackedDecoder(dec_dim, num_layers, input_shape)
     else:
-        encoder = encoders.DenseEncoder(input_shape, num_layers, enc_dim)
-        decoder = decoders.DenseDecoder(dec_dim, num_layers, input_shape)
+        encoder = encoders.CNNEncoder(input_shape, num_layers, enc_dim)
+        decoder = decoders.CNNDecoder(dec_dim, num_layers, input_shape)
 
     return encoder, decoder
 

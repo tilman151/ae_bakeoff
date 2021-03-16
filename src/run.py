@@ -27,7 +27,7 @@ def run(model_type, dataset, batch_size, gpu, anomaly=False):
 
 
 def _train(model_type, ae, datamodule, logger, gpu):
-    epochs = 60
+    epochs = 100
     gpus = [0] if gpu else None
     if model_type == 'stacked':
         trainer = _train_stacked(ae, datamodule, logger, epochs, gpus)
