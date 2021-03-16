@@ -9,7 +9,8 @@ from models import bottlenecks, encoders, decoders
 class TestBuildingDataModule(unittest.TestCase):
     def test_anomaly(self):
         dm = building.build_datamodule('mnist', model_type='vae', anomaly=True)
-        self.assertEqual(1, dm.exclude)
+        self.assertIsInstance(dm, data.MNISTWithEMNISTTestDataModule)
+        self.assertIsNone(dm.exclude)
 
     def test_classification(self):
         dm = building.build_datamodule('mnist', model_type='classification')
@@ -24,8 +25,8 @@ class TestBuildingDataModule(unittest.TestCase):
             self.assertEqual(32, dm.batch_size)
         with self.subTest(case='anomaly'):
             dm = building.build_datamodule(anomaly=True)
-            self.assertIsInstance(dm, data.MNISTDataModule)
-            self.assertEqual(1, dm.exclude)
+            self.assertIsInstance(dm, data.MNISTWithEMNISTTestDataModule)
+            self.assertIsNone(dm.exclude)
             self.assertIsNone(dm.train_size)
             self.assertEqual(32, dm.batch_size)
 
@@ -103,20 +104,20 @@ class TestBuildingAE(unittest.TestCase):
             self.assertEqual(latent_dim, decoder.latent_dim)
         with self.subTest(model_type='vanilla'):
             encoder, decoder = self._build_nets('vanilla', latent_dim)
-            self.assertIsInstance(encoder, encoders.DenseEncoder)
-            self.assertIsInstance(decoder, decoders.DenseDecoder)
+            self.assertIsInstance(encoder, encoders.CNNEncoder)
+            self.assertIsInstance(decoder, decoders.CNNDecoder)
             self.assertEqual(latent_dim, encoder.latent_dim)
             self.assertEqual(latent_dim, decoder.latent_dim)
         with self.subTest(model_type='vae'):
             encoder, decoder = self._build_nets('vae', latent_dim)
-            self.assertIsInstance(encoder, encoders.DenseEncoder)
-            self.assertIsInstance(decoder, decoders.DenseDecoder)
+            self.assertIsInstance(encoder, encoders.CNNEncoder)
+            self.assertIsInstance(decoder, decoders.CNNDecoder)
             self.assertEqual(2 * latent_dim, encoder.latent_dim)
             self.assertEqual(latent_dim, decoder.latent_dim)
         with self.subTest(model_type='beta_vae_strict'):
             encoder, decoder = self._build_nets('beta_vae_strict', latent_dim)
-            self.assertIsInstance(encoder, encoders.DenseEncoder)
-            self.assertIsInstance(decoder, decoders.DenseDecoder)
+            self.assertIsInstance(encoder, encoders.CNNEncoder)
+            self.assertIsInstance(decoder, decoders.CNNDecoder)
             self.assertEqual(2 * latent_dim, encoder.latent_dim)
             self.assertEqual(latent_dim, decoder.latent_dim)
 
