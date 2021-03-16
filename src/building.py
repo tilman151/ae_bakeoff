@@ -9,19 +9,19 @@ from models import encoders, decoders, bottlenecks
 
 
 def build_datamodule(dataset=None, model_type=None, batch_size=32, anomaly=False):
-    exclude = 1 if anomaly else None
     train_size = 550 if model_type == 'classification' else None
-    dataset_constructor = _get_dataset_constructor(dataset)
+    dataset_constructor = _get_dataset_constructor(dataset, anomaly)
     datamodule = dataset_constructor('../data',
                                      batch_size=batch_size,
-                                     train_size=train_size,
-                                     exclude=exclude)
+                                     train_size=train_size)
 
     return datamodule
 
 
-def _get_dataset_constructor(dataset):
-    if dataset == 'mnist' or dataset is None:
+def _get_dataset_constructor(dataset, anomaly):
+    if anomaly:
+        return data.MNISTWithEMNISTTestDataModule
+    elif dataset == 'mnist' or dataset is None:
         return data.MNISTDataModule
     elif dataset in data.AVAILABLE_DATASETS:
         return data.AVAILABLE_DATASETS[dataset]

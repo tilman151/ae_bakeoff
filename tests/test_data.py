@@ -5,7 +5,8 @@ from unittest import mock
 from PIL import ImageChops
 from torchvision.datasets import MNIST, EMNIST
 
-from data import MNISTDataModule, FashionMNISTDataModule, KMNISTDataModule, MNISTWithEMNISTTest
+from data import MNISTDataModule, FashionMNISTDataModule, KMNISTDataModule, MNISTWithEMNISTTest, \
+    MNISTWithEMNISTTestDataModule
 
 DATA_ROOT = os.path.join(os.path.dirname(__file__), '..', 'data')
 
@@ -58,6 +59,11 @@ class TestFashionMNIST(unittest.TestCase, TestMNISTTemplate):
 class TestKMNIST(unittest.TestCase, TestMNISTTemplate):
     def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
         return KMNISTDataModule(data_root, batch_size, train_size, exclude)
+
+
+class TestEMNIST(unittest.TestCase, TestMNISTTemplate):
+    def _get_mnist(self, data_root, batch_size=32, exclude=None, train_size=None):
+        return MNISTWithEMNISTTestDataModule(data_root, batch_size, train_size, exclude)
 
 
 class TestMNISTWithEMNISTTest(unittest.TestCase):
