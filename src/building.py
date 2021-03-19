@@ -13,7 +13,8 @@ def build_datamodule(dataset=None, model_type=None, batch_size=32, anomaly=False
     dataset_constructor = _get_dataset_constructor(dataset, anomaly)
     datamodule = dataset_constructor('../data',
                                      batch_size=batch_size,
-                                     train_size=train_size)
+                                     train_size=train_size,
+                                     exclude=10 if anomaly else None)
 
     return datamodule
 

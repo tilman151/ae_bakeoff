@@ -104,6 +104,13 @@ class MNISTWithEMNISTTest(Dataset):
 
         return split
 
+    @property
+    def targets(self):
+        if self.train:
+            return self.dataset.targets
+        else:
+            raise RuntimeError("Can only access targets tensor of training data.")
+
     def __getitem__(self, index):
         features, label = self.dataset[index]
         if not self.train and index >= self.half_test_len:
