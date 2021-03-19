@@ -70,15 +70,32 @@ def plot_roc(ax, fpr, tpr, auc, title=None):
         ax.set_title(title)
 
 
-def plot_risk_coverage(ax, coverage, risk, title=None):
+def plot_risk_coverage(ax: plt.Axes, coverage, risk, title=None):
+    coverage, mean_risk, std_risk = _coverage_wise_risk_stats(coverage, risk)
     if title is None:
-        ax.plot(coverage, risk)
+        ax.plot(coverage, mean_risk)
     else:
-        ax.plot(coverage, risk, label=title)
+        ax.plot(coverage, mean_risk, label=title)
+    ax.fill_between(coverage, mean_risk - std_risk, mean_risk + std_risk, alpha=0.5)
     ax.set_xlabel('Coverage')
     ax.set_ylabel('Risk')
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 0.6)
+
+
+def _coverage_wise_risk_stats(coverages, risks):
+    bins = np.linspace(0, 1, num=100)
+    bins[-1] += 1e-6
+    resampled_risks = np.zeros((len(bins), len(coverages)))
+    for i, (coverage, risk) in enumerate(zip(coverages, risks)):
+        sorting_idx = np.argsort(coverage)
+        coverage = np.array(coverage)[sorting_idx]
+        risk = np.array(risk)[sorting_idx]
+        resampled_risks[:, i] = np.interp(bins, coverage, risk)
+    mean_risks = resampled_risks.mean(axis=1)
+    std_risks = resampled_risks.std(axis=1)
+
+    return bins, mean_risks, std_risks
 
 
 def plot_perfect_risk_coverage(ax):

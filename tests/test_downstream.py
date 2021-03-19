@@ -161,6 +161,15 @@ class TestFormatting(unittest.TestCase):
         self.assertEqual(0, np.sum(written_tensor[0] - vid[0]))
         self.assertEqual(0, np.sum(written_tensor[-1] - vid[0]))
 
+    def test_coverage_wise_mean_risk(self):
+        coverages = [np.linspace(0, 1, i * 100).tolist() for i in range(1, 4)]
+        mean_risks = [np.repeat(np.arange(100), i).tolist() for i in range(1, 4)]
+        coverages, mean_risks, std_risk = formatting._coverage_wise_risk_stats(coverages, mean_risks)
+        for i, risk in enumerate(mean_risks):
+            self.assertAlmostEqual(i, risk)
+        for expected_cov, actual_cov in zip(np.linspace(0, 1, 100), coverages):
+            self.assertAlmostEqual(expected_cov, actual_cov, places=2)
+
     @unittest.skip('Only for visual inspection')
     def test_roc_plotting(self):
         fig = plt.figure(figsize=(5, 5))
@@ -170,13 +179,13 @@ class TestFormatting(unittest.TestCase):
         formatting.plot_roc(plt.gca(), tpr, fpr, auc)
         fig.show()
 
-    @unittest.skip('Only for visual inspection')
+    # @unittest.skip('Only for visual inspection')
     def test_coverage_plotting(self):
         fig = plt.figure(figsize=(5, 5))
-        coverage = np.linspace(0, 1, num=50)
-        accuracy = np.linspace(0.2, 0.5, num=50)
+        coverage = np.linspace([0] * 3, [1] * 3, num=500, axis=1)
+        risk = np.linspace([0.2] * 3, [0.5] * 3, num=500, axis=1) + np.random.randn(3, 500) * 0.01
         formatting.plot_perfect_risk_coverage(plt.gca())
-        formatting.plot_risk_coverage(plt.gca(), coverage, accuracy, "test")
+        formatting.plot_risk_coverage(plt.gca(), coverage.tolist(), risk.tolist(), "test")
         plt.legend(loc='lower right')
         fig.show()
 
