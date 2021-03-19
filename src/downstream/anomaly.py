@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
 
 from building import load_ae_from_checkpoint
 
@@ -19,8 +19,9 @@ class AnomalyDetection:
         fpr, tpr, thresholds = roc_curve(anomaly_labels, scores)
         auc = roc_auc_score(anomaly_labels, scores)
         coverages = self._get_coverages(scores, thresholds)
+        accuracies = self._get_accuracies(anomaly_labels, scores, thresholds)
 
-        return fpr, tpr, thresholds, coverages, auc
+        return fpr, tpr, thresholds, coverages, accuracies, auc
 
     @torch.no_grad()
     def score(self, dataloader):
@@ -44,6 +45,15 @@ class AnomalyDetection:
         coverages = np.array(coverages) / len(scores)
 
         return coverages
+
+    def _get_accuracies(self, labels, scores, thresholds):
+        num_samples = len(labels)
+        accuracies = []
+        for thresh in thresholds:
+            accuracies.append(accuracy_score(labels, (scores >= thresh)))
+        accuracies = np.array(accuracies)
+
+        return accuracies
 
     @staticmethod
     def get_test_anomaly_labels(dataloader, anomaly_value):

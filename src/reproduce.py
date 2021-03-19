@@ -185,7 +185,7 @@ class AnomalyDownstream(AbstractResults):
     def _get_test_roc(self, model_type, checkpoint_path):
         data_module = building.build_datamodule(self.dataset, anomaly=True)
         anomaly_detector = downstream.AnomalyDetection.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path)
-        fpr, tpr, thresholds, _, auc = anomaly_detector.get_test_roc(data_module)
+        fpr, tpr, thresholds, _, _, auc = anomaly_detector.get_test_roc(data_module)
 
         return fpr, tpr, thresholds, auc
 

@@ -44,7 +44,7 @@ class TestAnomalyDetection(unittest.TestCase):
         self.assertEqual(10000, scores.shape[0])  # number of scores is length of test data
 
     def test_roc(self):
-        tpr, fpr, thresholds, coverages, auc = self.anomaly_detector.get_test_roc(self.data)
+        tpr, fpr, thresholds, coverages, auc, accuracies = self.anomaly_detector.get_test_roc(self.data)
         test_dataloader = self.data.test_dataloader()
         scores = self.anomaly_detector.score(test_dataloader)
         self.assertTrue(np.all(thresholds >= np.min(scores)))

@@ -24,6 +24,16 @@ class TestMNISTTemplate:
         with self.subTest(split='test'):
             self._check_included(anomaly, datamodule.test_dataloader())
 
+    def test_no_op_if_exclude_not_existing(self):
+        none_excluded = self._get_mnist(DATA_ROOT)
+        none_excluded.prepare_data()
+        none_excluded.setup()
+        non_existing_excluded = self._get_mnist(DATA_ROOT, exclude=999)
+        non_existing_excluded.prepare_data()
+        non_existing_excluded.setup()
+        self.assertLess(0, len(non_existing_excluded.train_dataloader()))
+        self.assertEqual(len(none_excluded.train_dataloader()), len(non_existing_excluded.train_dataloader()))
+
     def _check_excluded(self, excluded, loader):
         for _, labels in loader:
             self.assertNotIn(excluded, labels)
