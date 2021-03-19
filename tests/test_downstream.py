@@ -44,12 +44,14 @@ class TestAnomalyDetection(unittest.TestCase):
         self.assertEqual(10000, scores.shape[0])  # number of scores is length of test data
 
     def test_roc(self):
-        tpr, fpr, thresholds, auc = self.anomaly_detector.get_test_roc(self.data)
+        tpr, fpr, thresholds, coverages, auc = self.anomaly_detector.get_test_roc(self.data)
         test_dataloader = self.data.test_dataloader()
         scores = self.anomaly_detector.score(test_dataloader)
         self.assertTrue(np.all(thresholds >= np.min(scores)))
         self.assertTrue(np.all(thresholds[1:] <= np.max(scores)))
         self.assertGreaterEqual(thresholds[1], np.max(scores))
+        self.assertEqual(1., coverages[0])
+        self.assertEqual(0., coverages[-1])
         self.assertLessEqual(0, auc)
         self.assertGreaterEqual(1, auc)
 
@@ -166,6 +168,16 @@ class TestFormatting(unittest.TestCase):
         fpr = np.linspace(0, 1, num=50)
         auc = 0.5
         formatting.plot_roc(plt.gca(), tpr, fpr, auc)
+        fig.show()
+
+    @unittest.skip('Only for visual inspection')
+    def test_coverage_plotting(self):
+        fig = plt.figure(figsize=(5, 5))
+        coverage = np.linspace(0, 1, num=50)
+        accuracy = np.linspace(0.2, 0.5, num=50)
+        formatting.plot_perfect_risk_coverage(plt.gca())
+        formatting.plot_risk_coverage(plt.gca(), coverage, accuracy, "test")
+        plt.legend(loc='lower right')
         fig.show()
 
 

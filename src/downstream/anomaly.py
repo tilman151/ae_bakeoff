@@ -18,8 +18,9 @@ class AnomalyDetection:
         anomaly_labels = self.get_test_anomaly_labels(test_dataloader, anomaly_value=datamodule.exclude)
         fpr, tpr, thresholds = roc_curve(anomaly_labels, scores)
         auc = roc_auc_score(anomaly_labels, scores)
+        coverages = self._get_coverages(scores, thresholds)
 
-        return fpr, tpr, thresholds, auc
+        return fpr, tpr, thresholds, coverages, auc
 
     @torch.no_grad()
     def score(self, dataloader):
@@ -37,6 +38,12 @@ class AnomalyDetection:
         score = score.numpy()
 
         return score
+
+    def _get_coverages(self, scores, thresholds):
+        coverages = [np.sum(scores < thresh) for thresh in thresholds]
+        coverages = np.array(coverages) / len(scores)
+
+        return coverages
 
     @staticmethod
     def get_test_anomaly_labels(dataloader, anomaly_value):

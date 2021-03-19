@@ -70,6 +70,25 @@ def plot_roc(ax, fpr, tpr, auc, title=None):
         ax.set_title(title)
 
 
+def plot_risk_coverage(ax, coverage, risk, title=None):
+    if title is None:
+        ax.plot(coverage, risk)
+    else:
+        ax.plot(coverage, risk, label=title)
+    ax.set_xlabel('Coverage')
+    ax.set_ylabel('Risk')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 0.6)
+
+
+def plot_perfect_risk_coverage(ax):
+    coverage = np.linspace(0, 1, num=11)
+    perfect_risk = np.maximum(0, np.linspace(-0.5, 0.5, num=11))
+    ax.plot(coverage, perfect_risk, c="gray", linestyle=":", label="perfect")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 0.6)
+
+
 def plot_reduction(ax, features, labels, title=None):
     classes = np.unique(labels)
     for cls, color in zip(classes, plt.cm.get_cmap('tab10').colors):
