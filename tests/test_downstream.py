@@ -38,10 +38,12 @@ class TestAnomalyDetection(unittest.TestCase):
         self.assertListEqual(expected_anomaly_labels.tolist(), actual_anomaly_labels.tolist())
 
     def test_score(self):
+        self.anomaly_detector.autoencoder.forward = mock.MagicMock(wraps=lambda x: torch.zeros_like(x))
         test_dataloader = self.data.test_dataloader()
         scores = self.anomaly_detector.score(test_dataloader)
         self.assertIsInstance(scores, np.ndarray)
         self.assertEqual(10000, scores.shape[0])  # number of scores is length of test data
+        self.assertTrue(np.all(scores >= 0.), msg="Regression: scores have to be all non-negative.")
 
     def test_roc(self):
         tpr, fpr, thresholds, auc = self.anomaly_detector.get_test_roc(self.data)
