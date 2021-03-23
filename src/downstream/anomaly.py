@@ -46,8 +46,9 @@ class AnomalyDetection:
         risks = np.empty_like(thresholds)
         for i, thresh in enumerate(thresholds):
             predictions = scores < thresh
-            coverages[i] = np.sum(predictions) / len(scores)
-            risks[i] = np.sum(predictions * labels) / (np.sum(predictions) + 1e-8)
+            num_covered = np.sum(predictions)
+            coverages[i] = num_covered / len(scores)
+            risks[i] = np.sum(predictions * labels) / (num_covered + 1e-8)
 
         return coverages, risks
 
