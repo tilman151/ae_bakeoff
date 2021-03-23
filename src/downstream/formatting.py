@@ -80,7 +80,7 @@ def plot_risk_coverage(ax: plt.Axes, coverage, risk, title=None):
     ax.set_xlabel('Coverage')
     ax.set_ylabel('Risk')
     ax.set_xlim(0, 1)
-    ax.set_ylim(0, 0.6)
+    ax.set_ylim(0, 0.5)
 
 
 def _coverage_wise_risk_stats(coverages, risks):
@@ -103,7 +103,7 @@ def plot_perfect_risk_coverage(ax):
     perfect_risk = np.maximum(0, np.linspace(-0.5, 0.5, num=11))
     ax.plot(coverage, perfect_risk, c="gray", linestyle=":", label="perfect")
     ax.set_xlim(0, 1)
-    ax.set_ylim(0, 0.6)
+    ax.set_ylim(0, 0.5)
 
 
 def plot_reduction(ax, features, labels, title=None):
