@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from sklearn.metrics import roc_curve, roc_auc_score, accuracy_score
+from sklearn.metrics import roc_curve, roc_auc_score
 
 from building import load_ae_from_checkpoint
 
@@ -10,6 +10,8 @@ class AnomalyDetection:
         self.autoencoder = autoencoder.to('cpu')
         self.autoencoder.eval()
 
+        self.score_func = torch.nn.BCELoss(reduction='none')
+
     def get_test_roc(self, datamodule):
         datamodule.prepare_data()
         datamodule.setup('test')
@@ -18,10 +20,9 @@ class AnomalyDetection:
         anomaly_labels = self.get_test_anomaly_labels(test_dataloader, anomaly_value=datamodule.exclude)
         fpr, tpr, thresholds = roc_curve(anomaly_labels, scores)
         auc = roc_auc_score(anomaly_labels, scores)
-        coverages = self._get_coverages(scores, thresholds)
-        accuracies = self._get_accuracies(anomaly_labels, scores, thresholds)
+        coverages, risks = self._get_coverages_and_risks(scores, anomaly_labels, thresholds)
 
-        return fpr, tpr, thresholds, coverages, accuracies, auc
+        return fpr, tpr, thresholds, coverages, risks, auc
 
     @torch.no_grad()
     def score(self, dataloader):
@@ -35,25 +36,20 @@ class AnomalyDetection:
     def _score_batch(self, batch):
         batch_size = batch.shape[0]
         reconstruction = self.autoencoder(batch)
-        score = torch.sum((reconstruction - batch).view(batch_size, -1), dim=1)
+        score = torch.sum(self.score_func(reconstruction, batch).view(batch_size, -1), dim=1)
         score = score.numpy()
 
         return score
 
-    def _get_coverages(self, scores, thresholds):
-        coverages = [np.sum(scores < thresh) for thresh in thresholds]
-        coverages = np.array(coverages) / len(scores)
+    def _get_coverages_and_risks(self, scores, labels, thresholds):
+        coverages = np.empty_like(thresholds)
+        risks = np.empty_like(thresholds)
+        for i, thresh in enumerate(thresholds):
+            predictions = scores < thresh
+            coverages[i] = np.sum(predictions) / len(scores)
+            risks[i] = np.sum(predictions * labels) / (np.sum(predictions) + 1e-8)
 
-        return coverages
-
-    def _get_accuracies(self, labels, scores, thresholds):
-        num_samples = len(labels)
-        accuracies = []
-        for thresh in thresholds:
-            accuracies.append(accuracy_score(labels, (scores >= thresh)))
-        accuracies = np.array(accuracies)
-
-        return accuracies
+        return coverages, risks
 
     @staticmethod
     def get_test_anomaly_labels(dataloader, anomaly_value):
