@@ -10,6 +10,8 @@ class AnomalyDetection:
         self.autoencoder = autoencoder.to('cpu')
         self.autoencoder.eval()
 
+        self.score_func = torch.nn.BCELoss(reduction='none')
+
     def get_test_roc(self, datamodule):
         datamodule.prepare_data()
         datamodule.setup('test')
@@ -33,7 +35,7 @@ class AnomalyDetection:
     def _score_batch(self, batch):
         batch_size = batch.shape[0]
         reconstruction = self.autoencoder(batch)
-        score = torch.sum((reconstruction - batch).view(batch_size, -1), dim=1)
+        score = torch.sum(self.score_func(reconstruction, batch).view(batch_size, -1), dim=1)
         score = score.numpy()
 
         return score
