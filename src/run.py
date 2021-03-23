@@ -17,7 +17,6 @@ AUTOENCODERS = ['shallow',
 def run(model_type, dataset, batch_size, gpu, anomaly=False):
     assert model_type in AUTOENCODERS
     task = 'anomaly' if anomaly else None
-    pl.seed_everything(42)
     datamodule = build_datamodule(dataset, model_type, batch_size, anomaly)
     ae = build_ae(model_type, datamodule.dims, anomaly)
     logger = build_logger(model_type, dataset, task)
@@ -27,7 +26,7 @@ def run(model_type, dataset, batch_size, gpu, anomaly=False):
 
 
 def _train(model_type, ae, datamodule, logger, gpu):
-    epochs = 100
+    epochs = 10
     gpus = [0] if gpu else None
     if model_type == 'stacked':
         trainer = _train_stacked(ae, datamodule, logger, epochs, gpus)
