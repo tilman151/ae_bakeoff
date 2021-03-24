@@ -33,7 +33,7 @@ def do_anomaly_detection(checkpoints, anomaly_detection):
 
 
 def train_all(checkpoints, replications, gpu):
-    for model_type in ['vanilla']:  # run.AUTOENCODERS:
+    for model_type in run.AUTOENCODERS:
         for _ in range(replications):
             if model_type not in checkpoints or len(checkpoints[model_type]) < replications:
                 checkpoints[model_type] = []
