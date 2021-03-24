@@ -185,8 +185,9 @@ class TestFormatting(unittest.TestCase):
         fig = plt.figure(figsize=(5, 5))
         coverage = np.linspace([0] * 3, [1] * 3, num=500, axis=1)
         risk = np.linspace([0.2] * 3, [0.5] * 3, num=500, axis=1) + np.random.randn(3, 500) * 0.01
+        auc = np.random.rand(3)
         formatting.plot_perfect_risk_coverage(plt.gca())
-        formatting.plot_risk_coverage(plt.gca(), coverage.tolist(), risk.tolist(), "test")
+        formatting.plot_risk_coverage(plt.gca(), coverage.tolist(), risk.tolist(), auc.tolist(), "test")
         plt.legend(loc='lower right')
         fig.show()
 

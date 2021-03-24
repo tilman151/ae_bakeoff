@@ -70,12 +70,13 @@ def plot_roc(ax, fpr, tpr, auc, title=None):
         ax.set_title(title)
 
 
-def plot_risk_coverage(ax: plt.Axes, coverage, risk, title=None):
+def plot_risk_coverage(ax: plt.Axes, coverage, risk, auc, title=None):
     coverage, mean_risk, std_risk = _coverage_wise_risk_stats(coverage, risk)
+    mean_auc = np.mean(auc)
     if title is None:
         ax.plot(coverage, mean_risk)
     else:
-        ax.plot(coverage, mean_risk, label=title)
+        ax.plot(coverage, mean_risk, label=f'{title}: {mean_auc:.3f}')
     ax.fill_between(coverage, mean_risk - std_risk, mean_risk + std_risk, alpha=0.5)
     ax.set_xlabel('Coverage')
     ax.set_ylabel('Risk')
@@ -101,7 +102,7 @@ def _coverage_wise_risk_stats(coverages, risks):
 def plot_perfect_risk_coverage(ax):
     coverage = np.linspace(0, 1, num=11)
     perfect_risk = np.maximum(0, np.linspace(-0.5, 0.5, num=11))
-    ax.plot(coverage, perfect_risk, c="gray", linestyle=":", label="perfect")
+    ax.plot(coverage, perfect_risk, c="gray", linestyle=":", label="perfect: 0.125")
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 0.5)
 

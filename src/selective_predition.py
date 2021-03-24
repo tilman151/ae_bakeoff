@@ -1,6 +1,7 @@
 import os
 
 import matplotlib.pyplot as plt
+from sklearn import metrics
 
 import building
 import downstream
@@ -48,20 +49,23 @@ def train_all(checkpoints, replications, gpu):
 
 class CoveragesDownstream(AbstractResults):
     def add_coverages_for(self, model_type, checkpoint_path):
-        coverages, risks = self._get_test_coverages(model_type, checkpoint_path)
+        coverages, risks, auc = self._get_test_coverages(model_type, checkpoint_path)
         if model_type not in self:
             self[model_type] = {'coverages': [],
-                                'risks': []}
+                                'risks': [],
+                                'aucs': []}
         self[model_type]['coverages'].append(coverages.tolist())
         self[model_type]['risks'].append(risks.tolist())
+        self[model_type]['aucs'].append(auc)
         self.save()
 
     def _get_test_coverages(self, model_type, checkpoint_path):
         data_module = building.build_datamodule(self.dataset, anomaly=True)
         anomaly_detector = downstream.AnomalyDetection.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path)
-        fpr, tpr, _, coverages, risks, _ = anomaly_detector.get_test_roc(data_module)
+        _, _, _, coverages, risks, _ = anomaly_detector.get_test_roc(data_module)
+        auc = metrics.auc(coverages, risks)
 
-        return coverages, risks
+        return coverages, risks, auc
 
     def render(self):
         print('Render anomaly detection results...')
@@ -77,6 +81,7 @@ class CoveragesDownstream(AbstractResults):
             downstream.plot_risk_coverage(plt.gca(),
                                           self[model_type]['coverages'],
                                           self[model_type]['risks'],
+                                          self[model_type]['aucs'],
                                           title=model_type)
         plt.legend(loc='lower right')
 
