@@ -26,8 +26,7 @@ def reproduce(retrain, recalc_downstream, replications, gpu):
 def do_anomaly_detection(checkpoints, anomaly_detection):
     for model_type in checkpoints.keys():
         for checkpoint in checkpoints[model_type]:
-            if model_type not in anomaly_detection:
-                anomaly_detection.add_coverages_for(model_type, checkpoint)
+            anomaly_detection.add_coverages_for(model_type, checkpoint)
 
     return anomaly_detection
 
@@ -35,8 +34,9 @@ def do_anomaly_detection(checkpoints, anomaly_detection):
 def train_all(checkpoints, replications, gpu):
     for model_type in run.AUTOENCODERS:
         for _ in range(replications):
-            if model_type not in checkpoints or len(checkpoints[model_type]) < replications:
+            if model_type not in checkpoints:
                 checkpoints[model_type] = []
+            if len(checkpoints[model_type]) < replications:
                 checkpoints[model_type].append(run.run(model_type,
                                                        dataset="emnist",
                                                        batch_size=128,
@@ -104,7 +104,7 @@ if __name__ == '__main__':
     parser.add_argument('--retrain', action='store_true', help='Retrain even if checkpoints are available')
     parser.add_argument('--recalc_downstream', action='store_true', help='Recalculate downstream tasks')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
-    parser.add_argument("-r", "--replications", type=int, help="how many replications per autoencoder")
+    parser.add_argument("-r", "--replications", required=True, type=int, help="how many replications per autoencoder")
     parser.add_argument("--gpu", action="store_true", help="use GPU for training")
     opt = parser.parse_args()
 
