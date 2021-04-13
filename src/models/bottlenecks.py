@@ -7,7 +7,7 @@ class Bottleneck(nn.Module):
         super(Bottleneck, self).__init__()
         self.latent_dim = latent_dim
 
-    def forward(self, encoded):
+    def forward(self, encoded, n: int = 1):
         """Calculate latent code and loss."""
         raise NotImplementedError
 
@@ -21,7 +21,7 @@ class Bottleneck(nn.Module):
 
 
 class IdentityBottleneck(Bottleneck):
-    def forward(self, encoded):
+    def forward(self, encoded, n: int = 1):
         return encoded, self._loss()
 
     def _loss(self):
@@ -37,17 +37,18 @@ class VariationalBottleneck(Bottleneck):
 
         self.beta = beta
 
-    def forward(self, encoded):
+    def forward(self, encoded, n: int = 1):
         latent_dim = encoded.shape[1] // 2
-        mu, log_sigma = torch.split(encoded, latent_dim, dim=1)
-        noise = torch.randn_like(mu)
+        mu, log_sigma = torch.split(encoded.unsqueeze(1), latent_dim, dim=2)
+        noise = torch.randn(mu.shape[0], n, latent_dim, dtype=mu.dtype, device=mu.device)
         latent_code = noise * log_sigma.exp() + mu
+        latent_code = latent_code.squeeze(1)
         kl_div = self._loss(mu, log_sigma)
 
         return latent_code, kl_div
 
     def _loss(self, mu, log_sigma):
-        kl_div = 0.5 * torch.sum((2 * log_sigma).exp() + mu ** 2 - 1 - 2 * log_sigma, dim=1)
+        kl_div = 0.5 * torch.sum((2 * log_sigma).exp() + mu ** 2 - 1 - 2 * log_sigma, dim=-1)
         kl_div = kl_div.mean()  # Account for batch size
         kl_div *= self.beta  # trade off
 
@@ -64,7 +65,7 @@ class SparseBottleneck(Bottleneck):
         self.sparsity = sparsity
         self.beta = beta
 
-    def forward(self, encoded):
+    def forward(self, encoded, n: int = 1):
         latent_code = torch.sigmoid(encoded)
         sparsity_loss = self._loss(latent_code)
 
@@ -99,7 +100,7 @@ class VectorQuantizedBottleneck(Bottleneck):
 
         return embeddings
 
-    def forward(self, encoded):
+    def forward(self, encoded, n: int = 1):
         latent_code = self._quantize(encoded)
         loss = self._loss(encoded, latent_code)
         latent_code = self._straight_through_estimation(encoded, latent_code)

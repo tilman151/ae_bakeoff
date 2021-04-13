@@ -34,6 +34,13 @@ class TestVariationalBottleneck(unittest.TestCase):
         self.assertEqual(torch.Size((16, 1)), outputs.shape)
 
     @torch.no_grad()
+    def test_forward_multi_sample(self):
+        inputs = torch.zeros(16, 2)
+        outputs, loss = self.neck(inputs, n=10)
+
+        self.assertEqual(torch.Size((16, 10, 1)), outputs.shape)
+
+    @torch.no_grad()
     def test_kl_divergence(self):
         mu = np.random.randn(10) * 0.25
         sigma = np.random.randn(10) * 0.1 + 1.

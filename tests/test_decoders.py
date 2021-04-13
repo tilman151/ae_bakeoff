@@ -6,14 +6,23 @@ from models import decoders
 from templates import ModelTestsMixin, FrozenLayerCheckMixin
 
 
-class TestDenseEncoder(ModelTestsMixin, unittest.TestCase):
+class DecoderTestsMixin(ModelTestsMixin):
+    def test_multi_sample_shape(self):
+        n_samples = 5
+        test_inputs = self.test_inputs.unsqueeze(1).repeat(1, n_samples, *([1] * (self.test_inputs.ndim - 1)))
+        output_shape = torch.Size((self.output_shape[0], n_samples, *self.output_shape[1:]))
+        outputs = self.net(test_inputs)
+        self.assertEqual(output_shape, outputs.shape)
+
+
+class TestDenseEncoder(DecoderTestsMixin, unittest.TestCase):
     def setUp(self):
         self.test_inputs = torch.randn(16, 32)
         self.output_shape = torch.Size((16, 1, 32, 32))
         self.net = decoders.DenseDecoder(32, 3, self.output_shape[1:])
 
 
-class TestShallowDecoder(ModelTestsMixin, unittest.TestCase):
+class TestShallowDecoder(DecoderTestsMixin, unittest.TestCase):
     def setUp(self):
         self.test_inputs = torch.randn(16, 32)
         self.output_shape = torch.Size((16, 1, 32, 32))
@@ -49,7 +58,7 @@ class TestStackedDecoder(unittest.TestCase, FrozenLayerCheckMixin):
         self._check_frozen(self.net.layers[:2], should_be_frozen=False)
 
 
-class TestCNNDecoder(unittest.TestCase, ModelTestsMixin):
+class TestCNNDecoder(DecoderTestsMixin, unittest.TestCase):
     def setUp(self):
         self.test_inputs = torch.randn(16, 32)
         self.output_shape = torch.Size((16, 1, 32, 32))

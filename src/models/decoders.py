@@ -9,13 +9,33 @@ import utils
 from utils import pairwise
 
 
-class DenseDecoder(nn.Module):
+class Decoder(nn.Module):
+    def __init__(self, output_shape):
+        super(Decoder, self).__init__()
+        self.output_shape = output_shape
+
+    def forward(self, inputs):
+        batch_size = inputs.shape[0]
+        if inputs.ndim > 2:
+            output_shape = (batch_size, inputs.shape[1], *self.output_shape)
+            inputs = torch.flatten(inputs, start_dim=0, end_dim=1)
+        else:
+            output_shape = (batch_size, 1, *self.output_shape)
+        outputs = self._forward(inputs)
+        outputs = outputs.view(*output_shape).squeeze(1)
+
+        return outputs
+
+    def _forward(self, inputs):
+        raise NotImplementedError
+
+
+class DenseDecoder(Decoder):
     def __init__(self, latent_dim, num_layers, output_shape):
-        super().__init__()
+        super().__init__(output_shape)
 
         self.latent_dim = latent_dim
         self.num_layers = num_layers
-        self.output_shape = output_shape
 
         self.layers = self._build_layers()
 
@@ -48,27 +68,23 @@ class DenseDecoder(nn.Module):
         return nn.Sequential(nn.Linear(in_units, out_units),
                              nn.Sigmoid())
 
-    def forward(self, inputs):
+    def _forward(self, inputs):
         outputs = self.layers(inputs)
-        outputs = outputs.view(-1, *self.output_shape)
 
         return outputs
 
 
-class ShallowDecoder(nn.Module):
+class ShallowDecoder(Decoder):
     def __init__(self, latent_dim, output_shape):
-        super().__init__()
-
-        self.output_shape = output_shape
+        super().__init__(output_shape)
         self.latent_dim = latent_dim
 
         out_units = reduce(lambda a, b: a * b, self.output_shape)
         self.layer = nn.Sequential(nn.Linear(self.latent_dim, out_units),
                                    nn.Sigmoid())
 
-    def forward(self, inputs):
+    def _forward(self, inputs):
         outputs = self.layer(inputs)
-        outputs = outputs.view(-1, *self.output_shape)
 
         return outputs
 
@@ -99,19 +115,17 @@ class StackedDecoder(DenseDecoder):
         super().train(mode)
         self._freeze_layers()
 
-    def forward(self, inputs):
+    def _forward(self, inputs):
         for n in range(self._current_layer - 1, self.num_layers):
             inputs = self.layers[n](inputs)
-        outputs = inputs.view(-1, *self.output_shape)
 
-        return outputs
+        return inputs
 
 
-class CNNDecoder(nn.Module):
+class CNNDecoder(Decoder):
     def __init__(self, latent_dim, num_layers, output_shape):
-        super().__init__()
+        super().__init__(output_shape)
 
-        self.output_shape = output_shape
         self.num_layers = num_layers
         self.latent_dim = latent_dim
 
@@ -129,7 +143,7 @@ class CNNDecoder(nn.Module):
 
         return linear, convs
 
-    def forward(self, inputs):
+    def _forward(self, inputs):
         flat_inputs = self.linear(inputs)
         conv_inputs = flat_inputs.view(-1, 128, 7, 7)
         outputs = self.convs(conv_inputs)
