@@ -6,9 +6,10 @@ from building import load_ae_from_checkpoint
 
 
 class AnomalyDetection:
-    def __init__(self, autoencoder):
+    def __init__(self, autoencoder, num_latent_samples: int = 1):
         self.autoencoder = autoencoder.to('cpu')
         self.autoencoder.eval()
+        self.num_latent_samples = num_latent_samples
 
         self.score_func = torch.nn.BCELoss(reduction='none')
 
@@ -35,8 +36,10 @@ class AnomalyDetection:
 
     def _score_batch(self, batch):
         batch_size = batch.shape[0]
-        reconstruction = self.autoencoder(batch)
-        score = torch.sum(self.score_func(reconstruction, batch).view(batch_size, -1), dim=1)
+        reconstruction = self.autoencoder(batch, self.num_latent_samples)
+        batch = batch.unsqueeze(1).repeat(1, self.num_latent_samples, 1, 1, 1)
+        score = torch.sum(self.score_func(reconstruction, batch).view(batch_size, self.num_latent_samples, -1), dim=-1)
+        score = score.mean(dim=1)
         score = score.numpy()
 
         return score

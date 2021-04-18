@@ -28,10 +28,7 @@ class TestAnomalyDetection(unittest.TestCase):
         self.anomaly_detector = AnomalyDetection(self.net)
 
     def test_anomaly_labels(self):
-        class_labels = torch.randint(0, 10, size=(100,))
-        dummy_features = torch.randn(100, 50)
-        dummy_dataset = TensorDataset(dummy_features, class_labels)
-
+        class_labels, dummy_dataset = self._get_dummy_dataset()
         expected_anomaly_labels = (class_labels == 9).numpy().astype(np.int)
         actual_anomaly_labels = self.anomaly_detector.get_test_anomaly_labels(DataLoader(dummy_dataset, batch_size=32),
                                                                               anomaly_value=9)
@@ -55,6 +52,23 @@ class TestAnomalyDetection(unittest.TestCase):
         self.assertEqual(0., coverages[-1])
         self.assertLessEqual(0, auc)
         self.assertGreaterEqual(1, auc)
+
+    @mock.patch('lightning.Autoencoder.forward', return_value=torch.ones(10, 5, 1, 32, 32))
+    def test_multi_sample_scoring(self, mock_ae):
+        net = build_ae('vae', self.data.dims)
+        anomaly_detector = AnomalyDetection(net, num_latent_samples=5)
+        _, dummy_dataset = self._get_dummy_dataset()
+        scores = anomaly_detector.score(DataLoader(dummy_dataset, batch_size=10))
+        self.assertEqual((100,), scores.shape)
+        expected_score = anomaly_detector.score_func(torch.zeros(100, 5, 1, 32, 32), torch.ones(100, 5, 1, 32, 32))
+        expected_score = expected_score.view(100, -1).sum(-1) / 5
+        self.assertAlmostEqual(0, np.linalg.norm(scores - expected_score.numpy()))
+
+    def _get_dummy_dataset(self):
+        class_labels = torch.randint(0, 10, size=(100,))
+        dummy_features = torch.zeros(100, 1, 32, 32)
+        dummy_dataset = TensorDataset(dummy_features, class_labels)
+        return class_labels, dummy_dataset
 
 
 class TestClassification(ModelTestsMixin, FrozenLayerCheckMixin, unittest.TestCase):
@@ -180,7 +194,7 @@ class TestFormatting(unittest.TestCase):
         formatting.plot_roc(plt.gca(), tpr, fpr, auc)
         fig.show()
 
-    # @unittest.skip('Only for visual inspection')
+    @unittest.skip('Only for visual inspection')
     def test_coverage_plotting(self):
         fig = plt.figure(figsize=(5, 5))
         coverage = np.linspace([0] * 3, [1] * 3, num=500, axis=1)

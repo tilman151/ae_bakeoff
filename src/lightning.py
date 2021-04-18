@@ -19,10 +19,10 @@ class Autoencoder(pl.LightningModule):
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
-    def forward(self, inputs):
+    def forward(self, inputs, n: int = 1):
         inputs = self.add_noise(inputs)
         encoded = self.encoder(inputs)
-        latent_code, _ = self.bottleneck(encoded)
+        latent_code, _ = self.bottleneck(encoded, n)
         decoded = self.decoder(latent_code)
 
         return decoded
