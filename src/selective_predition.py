@@ -10,7 +10,7 @@ from downstream.results import AbstractResults
 from reproduce import Checkpoints
 
 
-def reproduce(retrain, recalc_downstream, replications, gpu):
+def reproduce(retrain, recalc_downstream, replications, num_latent_samples, gpu):
     load_checkpoints = not retrain
     load_downstream_results = (not recalc_downstream) and load_checkpoints
 
@@ -18,15 +18,15 @@ def reproduce(retrain, recalc_downstream, replications, gpu):
     checkpoints = train_all(checkpoints, replications, gpu)
 
     anomaly_detection = CoveragesDownstream("emnist", load_from_disk=load_downstream_results)
-    anomaly_detection = do_anomaly_detection(checkpoints, anomaly_detection)
+    anomaly_detection = do_anomaly_detection(checkpoints, anomaly_detection, num_latent_samples)
 
     anomaly_detection.render()
 
 
-def do_anomaly_detection(checkpoints, anomaly_detection):
+def do_anomaly_detection(checkpoints, anomaly_detection, num_latent_samples):
     for model_type in checkpoints.keys():
         for checkpoint in checkpoints[model_type]:
-            anomaly_detection.add_coverages_for(model_type, checkpoint)
+            anomaly_detection.add_coverages_for(model_type, checkpoint, num_latent_samples)
 
     return anomaly_detection
 
@@ -48,8 +48,8 @@ def train_all(checkpoints, replications, gpu):
 
 
 class CoveragesDownstream(AbstractResults):
-    def add_coverages_for(self, model_type, checkpoint_path):
-        coverages, risks, auc = self._get_test_coverages(model_type, checkpoint_path)
+    def add_coverages_for(self, model_type, checkpoint_path, num_latent_samples: int = 1):
+        coverages, risks, auc = self._get_test_coverages(model_type, checkpoint_path, num_latent_samples)
         if model_type not in self:
             self[model_type] = {'coverages': [],
                                 'risks': [],
@@ -59,9 +59,9 @@ class CoveragesDownstream(AbstractResults):
         self[model_type]['aucs'].append(auc)
         self.save()
 
-    def _get_test_coverages(self, model_type, checkpoint_path):
+    def _get_test_coverages(self, model_type, checkpoint_path, num_latent_samples):
         data_module = building.build_datamodule(self.dataset, anomaly=True)
-        anomaly_detector = downstream.AnomalyDetection.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path)
+        anomaly_detector = downstream.AnomalyDetection.from_autoencoder_checkpoint(model_type, data_module, checkpoint_path, num_latent_samples)
         _, _, _, coverages, risks, _ = anomaly_detector.get_test_roc(data_module)
         auc = metrics.auc(coverages, risks)
 
@@ -105,7 +105,8 @@ if __name__ == '__main__':
     parser.add_argument('--recalc_downstream', action='store_true', help='Recalculate downstream tasks')
     parser.add_argument('--batch_size', type=int, default=32, help='batch size for training')
     parser.add_argument("-r", "--replications", required=True, type=int, help="how many replications per autoencoder")
+    parser.add_argument("--num_latent_samples", default=1, type=int, help="number of samples to draw in latent space if possible")
     parser.add_argument("--gpu", action="store_true", help="use GPU for training")
     opt = parser.parse_args()
 
-    reproduce(opt.retrain, opt.recalc_downstream, opt.replications, opt.gpu)
+    reproduce(opt.retrain, opt.recalc_downstream, opt.replications, opt.num_latent_samples, opt.gpu)

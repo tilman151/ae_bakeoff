@@ -65,8 +65,11 @@ class AnomalyDetection:
         return labels
 
     @classmethod
-    def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path):
+    def from_autoencoder_checkpoint(cls, model_type, dm, checkpoint_path, num_latent_samples: int = 1):
         model = load_ae_from_checkpoint(model_type, dm.dims, anomaly=True, checkpoint_path=checkpoint_path)
-        classifier = cls(model)
+        if 'vae' in model_type and 'vq' not in model_type:
+            classifier = cls(model, num_latent_samples)
+        else:
+            classifier = cls(model)
 
         return classifier
